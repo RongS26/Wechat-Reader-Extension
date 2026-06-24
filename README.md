@@ -1,158 +1,176 @@
-# WeChat Reader AI
+# WeChat Reader AI / 微信公众号阅读助手
 
-A local Chrome extension for reading WeChat public-account articles with AI assistance.
+## 中文
 
-It is designed for a personal reading workflow:
+WeChat Reader AI 是一个本地 Chrome 插件，用来阅读微信公众号文章，并用 AI 生成结构化摘要、洞察和问答。
 
-- extract article title, author, publish time, and body text from `mp.weixin.qq.com`
-- summarize long articles with an LLM provider
-- ask follow-up questions about the current article
-- save useful notes locally
-- export reading notes into a personal knowledge folder
-- convert real usage friction into a product backlog for continuous improvement
+它不是 Chrome Web Store 上架插件，目前主要用于个人阅读和学习沉淀。
 
-## Current Status
+### 它能做什么
 
-This is a local unpacked Chrome extension, not a Chrome Web Store package.
+- 识别当前打开的微信公众号文章
+- 提取文章标题、作者、发布时间和正文
+- 生成 5 个阅读模块：
+  - Summary / 摘要
+  - Article Structure / 文章结构
+  - Key Insights / 关键洞察
+  - Core Conclusion / 核心结论
+  - Author Intent / 作者意图
+- 支持基于文章内容继续追问
+- 支持保存个人笔记
+- 支持导出 Markdown 阅读笔记
+- 支持多个 AI Provider：Anthropic、OpenAI、DeepSeek、Moonshot、Zhipu、Custom
 
-Stable local paths:
+### 本地安装
 
-| Purpose | Path |
-|---|---|
-| Source repository | `/Users/didi/work/projects/wechat-reader-extension` |
-| Stable Chrome unpacked-extension path | `/Users/didi/work/wechat-reader-extension` |
-| Personal reading notes home | `/Users/didi/work/work-hub/personal/projects/reading-notes` |
-
-The stable unpacked-extension path matters because Chrome remembers the folder path. If the source folder moves, Chrome may show `ERR_FILE_NOT_FOUND`.
-
-## Features
-
-- Side panel reading assistant
-- WeChat article extraction through content script
-- Multi-provider LLM settings
-- Local storage for API configuration and notes
-- Product feedback log:
-  - `INTERACTION_LOG.md`
-  - `BACKLOG.md`
-  - `OPTIMIZATION_WORKFLOW.md`
-
-## Install Locally
-
-1. Open Chrome.
-2. Go to `chrome://extensions`.
-3. Enable `Developer mode`.
-4. Click `Load unpacked`.
-5. Select:
+1. 打开 Chrome
+2. 进入 `chrome://extensions`
+3. 打开 `Developer mode`
+4. 点击 `Load unpacked`
+5. 选择这个稳定路径：
 
 ```text
 /Users/didi/work/wechat-reader-extension
 ```
 
-6. Pin or open the extension side panel.
-7. Open a WeChat article under `https://mp.weixin.qq.com/`.
-8. Click the extension and run analysis.
+这个路径应该指向真实源码目录：
 
-## Configure API Provider
-
-1. Open the extension options page.
-2. Choose a provider.
-3. Add the corresponding API key.
-4. Save settings.
-
-Supported host permissions currently include:
-
-- Anthropic
-- OpenAI
-- DeepSeek
-- Moonshot
-- Zhipu
-
-## Usage Flow
-
-1. Open a WeChat article.
-2. Open the WeChat Reader AI side panel.
-3. Extract article content.
-4. Generate summary or ask questions.
-5. Save useful notes.
-6. Export notes into the reading-notes folder when needed.
-
-## Product Workflow
-
-This extension treats chat feedback as product input.
-
-When a user reports friction or asks for an improvement:
-
-1. Record the original feedback in `INTERACTION_LOG.md`.
-2. Convert it into a backlog item in `BACKLOG.md`.
-3. Implement a small scoped change.
-4. Reload the unpacked extension.
-5. Verify on a real WeChat article.
-
-See:
-
-- [Optimization Workflow](./OPTIMIZATION_WORKFLOW.md)
-- [Backlog](./BACKLOG.md)
-- [Interaction Log](./INTERACTION_LOG.md)
-
-## Troubleshooting
-
-### Chrome shows `ERR_FILE_NOT_FOUND`
-
-The unpacked extension folder path probably moved.
-
-Fix:
-
-1. Confirm the stable path exists:
-
-```bash
-ls -la /Users/didi/work/wechat-reader-extension
+```text
+/Users/didi/work/projects/wechat-reader-extension
 ```
 
-2. If needed, recreate the symlink:
+如果 Chrome 显示 `ERR_FILE_NOT_FOUND`，通常是插件目录移动了。重新建立软链即可：
 
 ```bash
 ln -sfn /Users/didi/work/projects/wechat-reader-extension /Users/didi/work/wechat-reader-extension
 ```
 
-3. Open `chrome://extensions`.
-4. Remove the broken extension entry or reload it.
-5. Load unpacked from `/Users/didi/work/wechat-reader-extension`.
+### 使用方式
 
-### The extension says the current page is unsupported
+1. 打开一篇微信公众号文章，URL 应该以 `https://mp.weixin.qq.com/` 开头
+2. 打开 WeChat Reader AI 侧边栏
+3. 配置或选择 AI Provider
+4. 生成文章分析
+5. 继续追问、保存笔记或导出 Markdown
 
-Open a real WeChat public-account article whose URL starts with:
-
-```text
-https://mp.weixin.qq.com/
-```
-
-### Article extraction is empty
-
-Reload the article page, then reopen the side panel. Some WeChat pages delay-render content.
-
-### AI request fails
-
-Check:
-
-- provider selected
-- API key saved
-- network/proxy status
-- provider quota or auth errors
-
-## GitHub
-
-Remote:
+### 项目结构
 
 ```text
-https://github.com/AustenS26/wechat-reader-extension.git
+wechat-reader-extension/
+├── manifest.json          # Chrome extension manifest
+├── background.js          # Service worker and AI API calls
+├── content.js             # WeChat article extraction
+├── sidepanel.html         # Main side panel UI
+├── sidepanel.css
+├── sidepanel.js
+├── options.html           # Provider/API key settings
+├── options.js
+├── README.md              # Project entry point
+└── docs/                  # Setup, backlog, logs, rebuild prompt
 ```
 
-Recommended publish flow:
+### 文档
+
+- [本地安装与故障排查](./docs/SETUP.md)
+- [产品迭代流程](./docs/OPTIMIZATION_WORKFLOW.md)
+- [需求 Backlog](./docs/BACKLOG.md)
+- [真实交互日志](./docs/INTERACTION_LOG.md)
+- [从零重建插件的 Prompt](./docs/REBUILD_PROMPT.md)
+
+### 当前状态
+
+这个插件已经可以作为本地阅读助手使用。下一步重点不是继续堆功能，而是改善使用体验：
+
+- 更清晰的首次安装引导
+- 更具体的错误诊断
+- 更顺畅的“打开文章 → 识别 → 分析”流程
+- 更好地把导出的笔记沉淀到个人 reading-notes 文件夹
+
+---
+
+## English
+
+WeChat Reader AI is a local Chrome extension for reading WeChat public-account articles with AI assistance.
+
+It is not a Chrome Web Store extension. It is currently designed for personal reading, article analysis, and knowledge capture.
+
+### What It Does
+
+- Detects the current WeChat article page
+- Extracts article title, author, publish time, and body text
+- Generates five structured reading sections:
+  - Summary
+  - Article Structure
+  - Key Insights
+  - Core Conclusion
+  - Author Intent
+- Supports follow-up Q&A based on the article
+- Saves personal reading notes
+- Exports notes as Markdown
+- Supports multiple AI providers: Anthropic, OpenAI, DeepSeek, Moonshot, Zhipu, and Custom
+
+### Local Installation
+
+1. Open Chrome
+2. Go to `chrome://extensions`
+3. Enable `Developer mode`
+4. Click `Load unpacked`
+5. Select the stable local path:
+
+```text
+/Users/didi/work/wechat-reader-extension
+```
+
+This stable path should point to the actual source directory:
+
+```text
+/Users/didi/work/projects/wechat-reader-extension
+```
+
+If Chrome shows `ERR_FILE_NOT_FOUND`, the unpacked extension path probably moved. Recreate the symlink:
 
 ```bash
-git status
-git add README.md SETUP.md BACKLOG.md INTERACTION_LOG.md OPTIMIZATION_WORKFLOW.md REBUILD_PROMPT.md
-git commit -m "Document WeChat Reader extension workflow"
-git push origin main
+ln -sfn /Users/didi/work/projects/wechat-reader-extension /Users/didi/work/wechat-reader-extension
 ```
+
+### How to Use
+
+1. Open a WeChat article whose URL starts with `https://mp.weixin.qq.com/`
+2. Open the WeChat Reader AI side panel
+3. Configure or select an AI provider
+4. Generate article analysis
+5. Ask follow-up questions, save notes, or export Markdown
+
+### Repository Structure
+
+```text
+wechat-reader-extension/
+├── manifest.json          # Chrome extension manifest
+├── background.js          # Service worker and AI API calls
+├── content.js             # WeChat article extraction
+├── sidepanel.html         # Main side panel UI
+├── sidepanel.css
+├── sidepanel.js
+├── options.html           # Provider/API key settings
+├── options.js
+├── README.md              # Project entry point
+└── docs/                  # Setup, backlog, logs, rebuild prompt
+```
+
+### Documentation
+
+- [Local setup and troubleshooting](./docs/SETUP.md)
+- [Optimization workflow](./docs/OPTIMIZATION_WORKFLOW.md)
+- [Backlog](./docs/BACKLOG.md)
+- [Interaction log](./docs/INTERACTION_LOG.md)
+- [Rebuild prompt](./docs/REBUILD_PROMPT.md)
+
+### Current Status
+
+The extension is usable as a local reading assistant. The next step is not to add more random features, but to improve the user workflow:
+
+- clearer first-run setup
+- better diagnostics and error messages
+- smoother “open article → extract → analyze” flow
+- better export into the personal reading-notes folder
 

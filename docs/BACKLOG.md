@@ -25,7 +25,7 @@
 | WR-005 | P1 | Improve actionable error messages | “Open a WeChat article first” and API errors are not enough for recovery. | Map common failures to specific next steps. | Proposed |
 | WR-006 | P2 | Integrate notes with personal reading-notes folder | User placed reading-notes under `personal/projects` as a side project. | Improve export naming; add helper/import workflow for `/Users/didi/work/work-hub/personal/projects/reading-notes`. | Proposed |
 | WR-007 | P1 | Keep chat feedback as product backlog | User asked whether chat expectations can be captured. | Maintain `INTERACTION_LOG.md`; update this backlog when user confirms logging. | Ready |
-| WR-008 | P1 | Publish repository documentation to GitHub | “链接到我的GitHub仓库…沉淀read_me和实际这个小插件怎么做” | Add README and setup guide; commit and push docs to GitHub remote. | In Progress |
+| WR-008 | P1 | Publish repository documentation to GitHub | “链接到我的GitHub仓库…沉淀read_me和实际这个小插件怎么做” | Add bilingual README and setup guide; move process docs into `docs/`; commit and push docs to GitHub remote. | Done |
 
 ---
 

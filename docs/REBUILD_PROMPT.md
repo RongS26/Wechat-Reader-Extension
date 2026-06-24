@@ -50,9 +50,9 @@
 - content.js（提取页面中 #activity-name / .rich_media_title / #js_name / #publish_time / #js_content 等 DOM 内容）
 - sidepanel.html + sidepanel.css + sidepanel.js（主侧边栏 UI 和逻辑）
 - options.html + options.js（多 provider 设置页 + 笔记导出）
-- README.md（说明插件功能、安装、使用、故障排查、GitHub 发布流程）
-- SETUP.md（说明本地稳定路径 `/Users/didi/work/wechat-reader-extension` 和 Chrome unpacked extension 安装方式）
-- BACKLOG.md / INTERACTION_LOG.md / OPTIMIZATION_WORKFLOW.md（记录真实使用反馈、产品 backlog 和迭代流程）
+- README.md（中英双语项目入口：说明插件功能、安装、使用、文档索引、GitHub 发布流程）
+- docs/SETUP.md（说明本地稳定路径 `/Users/didi/work/wechat-reader-extension` 和 Chrome unpacked extension 安装方式）
+- docs/BACKLOG.md / docs/INTERACTION_LOG.md / docs/OPTIMIZATION_WORKFLOW.md / docs/REBUILD_PROMPT.md（记录真实使用反馈、产品 backlog、迭代流程和重建提示词）
 
 ## 本地安装与稳定路径
 

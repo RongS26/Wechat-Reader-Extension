@@ -250,14 +250,17 @@ chat feedback → interaction log → backlog → implementation → reload exte
 | Time Context | User Message | What It Reveals |
 |---|---|---|
 | After building local extension workflow | “我在本地的wechat-reader-extension看下怎么链接到我的GitHub仓库里去，如果不能上传你可以用我的浏览器权限去在网页操作我的GitHub，主要是沉淀read_me和实际这个小插件怎么做” | User wants the local extension project connected to GitHub, with a clear README explaining what the extension does, how to install it, how to recover from path issues, and how future product iteration should work. |
+| After first GitHub upload | “上传了，但是你现在结构也太乱了，根本看不明白，能不能梳理清楚” | Repository needs a clearer information architecture: root should be the entry point, process/history documents should move into a docs folder, and README should make the structure self-evident. |
+| Same cleanup request | “然后read me x中英双语” | README should be bilingual so both Chinese-first personal workflow and English GitHub readers can understand the plugin. |
 
 ### Product / Repository Implication
 
 - The extension already has a GitHub remote: `https://github.com/AustenS26/wechat-reader-extension.git`.
-- The repository lacked a `README.md`, making the project hard to understand from GitHub.
+- The repository initially lacked a `README.md`, making the project hard to understand from GitHub.
+- The first documentation pass left too many operational files in the root directory, making the repo visually noisy.
 - Setup instructions should document the stable local path and Chrome unpacked-extension workflow.
 
 ### Backlog Impact
 
-- WR-001 and WR-002 are partially addressed by adding `README.md` and `SETUP.md`.
-- Publishing to GitHub should include documentation files and current workflow logs.
+- WR-001 and WR-002 are addressed by setup guidance under `docs/SETUP.md`.
+- WR-008 is addressed by adding a bilingual root `README.md`, moving process documents under `docs/`, and pushing the cleaned structure to GitHub.
