@@ -31,6 +31,7 @@
 | WR-011 | P1 | Add source-linked core excerpts | “有没有可能有一些核心摘录和能针对性指向文章某个部分的能力” | Extract paragraph ids, add Core Excerpts with `[P#]` references, and click refs to scroll the original article. | Verify |
 | WR-012 | P1 | Auto-save provider API keys | “帮我自动保存，不要每次都重新输入一次key” | Auto-save API key/model/base URL edits in the settings page so the provider state persists without manual Save clicks. | Verify |
 | WR-013 | P1 | Language-aware output rules | “中文文章输出中文，英文文章输出中英双文” | Detect article language and switch analysis/chat prompts accordingly; keep bilingual output for English articles. | Verify |
+| WR-014 | P1 | Persist click-selected core excerpts | “Core Excerpts 支持在页面上点选一段内容，直接沉淀为一条摘录” | Store selected text per article in `selectedExcerpts:<url>`, auto-merge into Core Excerpts, and reload it on future opens without duplication. | Verify |
 
 ---
 

@@ -369,3 +369,27 @@ chat feedback → interaction log → backlog → implementation → reload exte
 ### Backlog Impact
 
 - WR-012 and WR-013 added and moved to Verify.
+
+## 2026-06-24 · Click-Selected Excerpts Persist as Core Excerpts
+
+### User Chat Inputs
+
+| Time Context | User Message | What It Reveals |
+|---|---|---|
+| After reviewing the latest extension | “关于Core Excerpts，有没有可能让读者去点击页面上部分内容，然后沉淀为一条Core Excerpts” | The excerpt flow should be driven from the source article itself, not only from AI-generated summaries. |
+
+### Product Implication
+
+- A selected excerpt should be persisted per article, not just appended to the current UI state.
+- The same article should reuse its own excerpt list on reopen instead of duplicating entries.
+
+### Implementation Added
+
+- `content.js` now sends selected text plus article URL to the background.
+- `background.js` stores selections under `selectedExcerpts:<articleUrl>` and broadcasts updates.
+- `sidepanel.js` loads existing selected excerpts when an article is analyzed and merges them into `Core Excerpts` without duplicates.
+- A toast confirms the excerpt was added.
+
+### Backlog Impact
+
+- WR-014 added and moved to Verify.

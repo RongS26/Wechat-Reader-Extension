@@ -5,6 +5,7 @@ let currentAnalysis = null;
 let chatHistory = [];
 let commentLog = [];
 let analysisRules = [];
+let selectedExcerpts = [];
 const RULES_KEY = 'wechatReaderAnalysisRules';
 
 const $ = id => document.getElementById(id);
@@ -124,8 +125,36 @@ function renderAnalysis(analysis) {
   $('author-text').innerHTML = formatText(analysis.authorIntent);
   $('structure-text').innerHTML = analysis.corePoints ? renderBullets(analysis.corePoints) : '';
   $('insights-text').innerHTML = analysis.insights ? renderBullets(analysis.insights) : '';
-  $('excerpts-text').innerHTML = analysis.excerpts ? renderBullets(analysis.excerpts) : '';
+  $('excerpts-text').innerHTML = mergedExcerpts(analysis.excerpts, selectedExcerpts)
+    ? renderBullets(mergedExcerpts(analysis.excerpts, selectedExcerpts))
+    : '';
   $('reader-value-text').innerHTML = analysis.readerValue ? renderBullets(analysis.readerValue) : '';
+}
+
+function mergedExcerpts(aiExcerpts = '', userExcerpts = []) {
+  const seen = new Set();
+  const lines = [];
+
+  const push = line => {
+    const normalized = line.replace(/\s+/g, ' ').trim().toLowerCase();
+    if (!normalized || seen.has(normalized)) return;
+    seen.add(normalized);
+    lines.push(line);
+  };
+
+  aiExcerpts.split('\n').forEach(line => {
+    const trimmed = line.trim();
+    if (trimmed) push(trimmed);
+  });
+
+  userExcerpts.forEach(item => {
+    const text = String(item.text || '').trim();
+    if (!text) return;
+    const ref = item.paragraphId ? `[P${item.paragraphId}] ` : '';
+    push(`• ${ref}"${text}" — Reader selected`);
+  });
+
+  return lines.join('\n');
 }
 
 function renderArticleBar() {
@@ -259,6 +288,7 @@ async function analyzeArticle() {
   ];
   await loadCommentLog();
   await loadAnalysisRules();
+  await loadSelectedExcerpts();
   showState('ready');
 }
 
@@ -312,6 +342,23 @@ async function loadCommentLog() {
 async function loadAnalysisRules() {
   const stored = await chrome.storage.sync.get([RULES_KEY]);
   analysisRules = Array.isArray(stored[RULES_KEY]) ? stored[RULES_KEY] : [];
+}
+
+async function loadSelectedExcerpts() {
+  if (!article?.url) {
+    selectedExcerpts = [];
+    return;
+  }
+  const key = `selectedExcerpts:${article.url}`;
+  const stored = await chrome.storage.local.get([key]);
+  selectedExcerpts = Array.isArray(stored[key]) ? stored[key] : [];
+  renderCurrentExcerpts();
+}
+
+function renderCurrentExcerpts() {
+  if (!currentAnalysis) return;
+  const merged = mergedExcerpts(currentAnalysis.excerpts, selectedExcerpts);
+  $('excerpts-text').innerHTML = merged ? renderBullets(merged) : '';
 }
 
 function normalizeRule(rule) {
@@ -499,23 +546,17 @@ $('main-content').addEventListener('click', async event => {
   }
 });
 
-// Receive user-selected excerpts from the article page
 chrome.runtime.onMessage.addListener(message => {
-  if (message.type !== 'userExcerpt') return;
-  addUserExcerpt(message.text, message.paragraphId);
+  if (message.type === 'selectedExcerptUpdated' && message.url === article?.url) {
+    selectedExcerpts = Array.isArray(message.list) ? message.list : [];
+    renderCurrentExcerpts();
+    showExcerptToast('✦ Excerpt added');
+  }
 });
 
-function addUserExcerpt(text, paragraphId) {
-  if (!currentAnalysis) return;
-  const ref  = paragraphId ? `[P${paragraphId}] ` : '';
-  const line = `• ${ref}"${text.trim()}" — (Reader selected)`;
-  currentAnalysis.excerpts = currentAnalysis.excerpts
-    ? `${currentAnalysis.excerpts}\n${line}`
-    : line;
-  $('excerpts-text').innerHTML = renderBullets(currentAnalysis.excerpts);
-
+function showExcerptToast(text) {
   const toast = document.createElement('div');
-  toast.textContent = '✦ Excerpt added';
+  toast.textContent = text;
   Object.assign(toast.style, {
     position: 'fixed', bottom: '16px', left: '50%',
     transform: 'translateX(-50%)',

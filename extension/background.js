@@ -96,6 +96,40 @@ async function callAI({ system, messages }) {
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === 'userExcerpt') {
+    (async () => {
+      const articleUrl = message.url || sender?.tab?.url || '';
+      if (!articleUrl) {
+        sendResponse({ error: 'Missing article URL for excerpt storage.' });
+        return;
+      }
+
+      const key = `selectedExcerpts:${articleUrl}`;
+      const { [key]: selectedExcerpts = [] } = await chrome.storage.local.get([key]);
+      const nextItem = {
+        text: message.text || '',
+        paragraphId: String(message.paragraphId || '').replace(/\D/g, ''),
+        ts: new Date().toISOString()
+      };
+
+      const normalized = nextItem.text.trim();
+      const exists = selectedExcerpts.some(item =>
+        item.text?.trim() === normalized && String(item.paragraphId || '') === nextItem.paragraphId
+      );
+      const nextList = exists ? selectedExcerpts : [nextItem, ...selectedExcerpts].slice(0, 30);
+      await chrome.storage.local.set({ [key]: nextList });
+
+      chrome.runtime.sendMessage({
+        type: 'selectedExcerptUpdated',
+        url: articleUrl,
+        excerpt: nextItem,
+        list: nextList
+      });
+
+      sendResponse({ ok: true, count: nextList.length });
+    })().catch(err => sendResponse({ error: err.message }));
+    return true;
+  }
 
   if (message.type === 'getArticle') {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {

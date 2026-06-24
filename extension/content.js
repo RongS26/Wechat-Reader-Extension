@@ -41,7 +41,7 @@
 
     excerptBtn.addEventListener('mousedown', e => {
       e.preventDefault();
-      chrome.runtime.sendMessage({ type: 'userExcerpt', text, paragraphId });
+      chrome.runtime.sendMessage({ type: 'userExcerpt', text, paragraphId, url: location.href });
       removeBtn();
       sel.removeAllRanges();
     });
