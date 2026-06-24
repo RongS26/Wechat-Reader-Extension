@@ -193,7 +193,7 @@
 
 | Purpose | Path |
 |---|---|
-| Extension source | `/Users/didi/work/projects/wechat-reader-extension` |
+| Extension source | `/Users/didi/work/projects/wechat-reader-extension/extension` |
 | Stable Chrome unpacked-extension path | `/Users/didi/work/wechat-reader-extension` |
 | Personal reading notes | `/Users/didi/work/work-hub/personal/projects/reading-notes` |
 | Test article | `https://mp.weixin.qq.com/s/YZgBZW6589GIjsOvYUZ1fg` |
@@ -317,3 +317,29 @@ chat feedback → interaction log → backlog → implementation → reload exte
 ### Backlog Impact
 
 - WR-010 added and moved to Verify.
+
+## 2026-06-24 · Source-Linked Excerpts and Cleaner Repository Homepage
+
+### User Chat Inputs
+
+| Time Context | User Message | What It Reveals |
+|---|---|---|
+| After GitHub upload | “这个仓库首页只能是现在的逻辑分层了吗，一眼看上去很多不知所云的文件” | Repository root should be an understandable product entry point, not a flat dump of extension source files. |
+| Same iteration | “这个reader，有没有可能有一些核心摘录和能针对性指向文章某个部分的能力” | Reader output should preserve evidence and let the user jump from AI interpretation back to the original article section. |
+
+### Product Implication
+
+- Move extension runtime files under `extension/` so GitHub root shows only `README.md`, `extension/`, and `docs/`.
+- Add paragraph-level source references so insights can be checked against original text.
+
+### Implementation Added
+
+- Moved Chrome extension files into `extension/`.
+- Updated stable local path to point `/Users/didi/work/wechat-reader-extension` at `.../wechat-reader-extension/extension`.
+- Content script now extracts paragraph ids.
+- Analysis output now includes `Core Excerpts`.
+- `[P#]` references in the side panel are clickable and scroll the original WeChat article to the matching paragraph.
+
+### Backlog Impact
+
+- WR-011 added and moved to Verify.

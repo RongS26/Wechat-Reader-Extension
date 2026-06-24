@@ -111,6 +111,7 @@ document.getElementById('btn-export').addEventListener('click', () => {
       '',
       '### Key Insights',
       n.insights,
+      n.excerpts ? `\n### Core Excerpts\n${n.excerpts}` : '',
       n.readerValue ? `\n### Reader Value\n${n.readerValue}` : '',
       n.conclusion ? `\n### Core Conclusion\n${n.conclusion}` : '',
       n.authorIntent ? `\n### Author Intent\n${n.authorIntent}` : '',

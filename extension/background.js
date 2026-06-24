@@ -122,6 +122,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message.type === 'scrollToParagraph') {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (!tabs[0]) { sendResponse({ error: 'No active tab' }); return; }
+      chrome.tabs.sendMessage(
+        tabs[0].id,
+        { type: 'scrollToParagraph', paragraphId: message.paragraphId },
+        (response) => {
+          if (chrome.runtime.lastError) {
+            sendResponse({ error: chrome.runtime.lastError.message });
+          } else {
+            sendResponse(response);
+          }
+        }
+      );
+    });
+    return true;
+  }
+
   if (message.type === 'getProviders') {
     sendResponse({ PROVIDERS });
     return false;

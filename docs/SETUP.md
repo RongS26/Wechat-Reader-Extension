@@ -14,16 +14,16 @@ To avoid this, keep Chrome pointed at a stable path:
 /Users/didi/work/wechat-reader-extension
 ```
 
-That path should point to the real source repository:
+That path should point to the real extension source directory:
 
 ```text
-/Users/didi/work/projects/wechat-reader-extension
+/Users/didi/work/projects/wechat-reader-extension/extension
 ```
 
 ## Recreate Stable Symlink
 
 ```bash
-ln -sfn /Users/didi/work/projects/wechat-reader-extension /Users/didi/work/wechat-reader-extension
+ln -sfn /Users/didi/work/projects/wechat-reader-extension/extension /Users/didi/work/wechat-reader-extension
 ```
 
 ## Load in Chrome
@@ -50,4 +50,3 @@ Check:
 - summary can be generated
 - chat can answer article-specific questions
 - note save/export behavior is clear
-

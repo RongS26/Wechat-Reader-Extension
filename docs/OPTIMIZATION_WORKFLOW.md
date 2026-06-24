@@ -55,7 +55,7 @@ If yes, record it before implementing.
 
 | Purpose | Path |
 |---|---|
-| Extension source | `/Users/didi/work/projects/wechat-reader-extension` |
+| Extension source | `/Users/didi/work/projects/wechat-reader-extension/extension` |
 | Stable unpacked extension path | `/Users/didi/work/wechat-reader-extension` |
 | Reading notes home | `/Users/didi/work/work-hub/personal/projects/reading-notes` |
 

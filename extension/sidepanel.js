@@ -10,6 +10,7 @@ const SECTION_HEADERS = [
   'SUMMARY',
   'CORE POINTS',
   'KEY INSIGHTS',
+  'CORE EXCERPTS',
   'READER VALUE',
   'CORE CONCLUSION',
   'AUTHOR INTENT'
@@ -71,17 +72,22 @@ function parseAnalysis(text) {
     summary: extractSection(text, 'SUMMARY', SECTION_HEADERS.slice(1)),
     corePoints: extractSection(text, 'CORE POINTS', SECTION_HEADERS.slice(2)),
     insights: extractSection(text, 'KEY INSIGHTS', SECTION_HEADERS.slice(3)),
-    readerValue: extractSection(text, 'READER VALUE', SECTION_HEADERS.slice(4)),
-    conclusion: extractSection(text, 'CORE CONCLUSION', SECTION_HEADERS.slice(5)),
+    excerpts: extractSection(text, 'CORE EXCERPTS', SECTION_HEADERS.slice(4)),
+    readerValue: extractSection(text, 'READER VALUE', SECTION_HEADERS.slice(5)),
+    conclusion: extractSection(text, 'CORE CONCLUSION', SECTION_HEADERS.slice(6)),
     authorIntent: extractSection(text, 'AUTHOR INTENT', [])
   };
 }
 
 function renderBullets(raw) {
   const items = raw.split('\n').filter(l => l.trim())
-    .map(l => `<li>${escapeHtml(l.replace(/^[•\-\*①②③④⑤]\s*/, '').trim())}</li>`)
+    .map(l => `<li>${linkParagraphRefs(escapeHtml(l.replace(/^[•\-\*①②③④⑤]\s*/, '').trim()))}</li>`)
     .join('');
   return `<ul>${items}</ul>`;
+}
+
+function linkParagraphRefs(html) {
+  return html.replace(/\[P(\d+)\]/g, '<button class="para-ref" data-pid="$1">P$1</button>');
 }
 
 function renderAnalysis(analysis) {
@@ -91,6 +97,7 @@ function renderAnalysis(analysis) {
   $('author-text').innerHTML = formatText(analysis.authorIntent);
   $('structure-text').innerHTML = analysis.corePoints ? renderBullets(analysis.corePoints) : '';
   $('insights-text').innerHTML = analysis.insights ? renderBullets(analysis.insights) : '';
+  $('excerpts-text').innerHTML = analysis.excerpts ? renderBullets(analysis.excerpts) : '';
   $('reader-value-text').innerHTML = analysis.readerValue ? renderBullets(analysis.readerValue) : '';
 }
 
@@ -127,6 +134,7 @@ function buildAnalysisSystem(extra = '') {
 Format your response EXACTLY using these section headers in this order. Do not add extra headers or change the names.
 
 Always prioritize substance over outline. The user does not need a simple article structure recap. Explain the core points clearly, extract a small number of strong insights, and evaluate the article from reader perspectives.
+The article text is numbered by paragraph as [P1], [P2], etc. Use these paragraph ids when citing evidence. Keep excerpts short; do not quote long passages.
 
 SUMMARY
 [3-5 sentences: what is this article about, what does it really argue, and why it matters]
@@ -141,6 +149,11 @@ KEY INSIGHTS
 • [one synthesized, reusable insight. Do not list scattered facts.]
 • [one deeper implication, pattern, or decision lens]
 • [one practical takeaway or risk, if applicable]
+
+CORE EXCERPTS
+• [P12] [short excerpt or paraphrased evidence] — [why this part matters]
+• [P23] [short excerpt or paraphrased evidence] — [what claim or insight it supports]
+• [P31] [short excerpt or paraphrased evidence] — [why a reader should notice it]
 
 READER VALUE
 • [For reader type 1: who this is useful for, and what they can use it to decide or do]
@@ -175,7 +188,10 @@ async function detectArticle({ silent = false } = {}) {
   }
 
   article = result;
-  articleText = article.content.slice(0, 8000);
+  articleText = (article.paragraphs?.length
+    ? article.paragraphs.map(p => `[P${p.id}] ${p.text}`).join('\n\n')
+    : article.content
+  ).slice(0, 10000);
   renderArticleBar();
   $('detected-message').textContent = `已识别：${article.title || 'Untitled'}\n正文约 ${article.content.length.toLocaleString()} 字符`;
   showState('detected');
@@ -221,7 +237,7 @@ async function applyComment() {
     system: buildAnalysisSystem(`The user has given a comment about the current output. Treat the comment as structured product feedback.
 
 Classify the comment internally as one of: EDIT, RESEARCH_REQUEST, STYLE, ACTIONABLE_NOTES, or AMBIGUOUS.
-Then revise the six-section output directly. If the comment is ambiguous, make the most useful conservative improvement and mention uncertainty inside the relevant section, not as an extra header.
+Then revise the seven-section output directly. If the comment is ambiguous, make the most useful conservative improvement and mention uncertainty inside the relevant section, not as an extra header.
 Do not invent facts beyond the article unless the user explicitly asks for broader interpretation.`),
     messages: [
       { role: 'user', content: `Article:\n${articleText}` },
@@ -325,6 +341,7 @@ function buildCurrentNote() {
     summary: $('summary-text').innerText,
     corePoints: $('structure-text').innerText,
     insights: $('insights-text').innerText,
+    excerpts: $('excerpts-text').innerText,
     readerValue: $('reader-value-text').innerText,
     conclusion: $('conclusion-text').innerText,
     authorIntent: $('author-text').innerText,
@@ -344,6 +361,7 @@ function noteToMarkdown(n) {
     n.summary,
     n.corePoints ? `\n## Core Points\n${n.corePoints}` : '',
     n.insights ? `\n## Key Insights\n${n.insights}` : '',
+    n.excerpts ? `\n## Core Excerpts\n${n.excerpts}` : '',
     n.readerValue ? `\n## Reader Value\n${n.readerValue}` : '',
     n.conclusion ? `\n## Core Conclusion\n${n.conclusion}` : '',
     n.authorIntent ? `\n## Author Intent\n${n.authorIntent}` : '',
@@ -402,6 +420,16 @@ $('btn-save-note').addEventListener('click', async () => {
 
 $('btn-export-current').addEventListener('click', () => {
   downloadMarkdown(buildCurrentNote());
+});
+
+$('main-content').addEventListener('click', async event => {
+  const ref = event.target.closest('.para-ref');
+  if (!ref) return;
+  const res = await msg('scrollToParagraph', { paragraphId: ref.dataset.pid });
+  if (res?.error) {
+    $('comment-status').textContent = res.error;
+    setTimeout(() => $('comment-status').textContent = '', 2400);
+  }
 });
 
 detectArticle({ silent: true }).catch(error => showError(error.message));
