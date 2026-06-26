@@ -23,8 +23,8 @@
 ### 1. Local Extension Path Is Fragile
 
 **Observed behavior**
-- The extension was originally loaded from `/Users/didi/work/wechat-reader-extension`.
-- Workspace cleanup moved it to `/Users/didi/work/projects/wechat-reader-extension`.
+- The extension was originally loaded from `~/workspace/wechat-reader-extension-stable`.
+- Workspace cleanup moved it to `~/workspace/wechat-reader-extension`.
 - Chrome still remembered the old unpacked-extension path and showed `ERR_FILE_NOT_FOUND`.
 
 **Product implication**
@@ -35,8 +35,8 @@
 **Upgrade idea**
 - Add a `SETUP.md` / in-extension setup note explaining the stable install path.
 - Keep a stable symlink path:
-  - `/Users/didi/work/wechat-reader-extension`
-  - points to `/Users/didi/work/projects/wechat-reader-extension`
+  - `~/workspace/wechat-reader-extension-stable`
+  - points to `~/workspace/wechat-reader-extension`
 - Add a visible “If extension fails after folder cleanup” troubleshooting section.
 
 **Priority**
@@ -140,7 +140,7 @@
 **Product implication**
 - Saved notes are trapped in browser storage unless exported.
 - User’s desired long-term home is now:
-  - `/Users/didi/work/work-hub/personal/projects/reading-notes/`
+  - `~/workspace/reading-notes/`
 
 **Upgrade idea**
 - Short term: add export naming convention and instructions to save into reading-notes.
@@ -193,9 +193,9 @@
 
 | Purpose | Path |
 |---|---|
-| Extension source | `/Users/didi/work/projects/wechat-reader-extension/extension` |
-| Stable Chrome unpacked-extension path | `/Users/didi/work/wechat-reader-extension` |
-| Personal reading notes | `/Users/didi/work/work-hub/personal/projects/reading-notes` |
+| Extension source | `~/workspace/wechat-reader-extension/extension` |
+| Stable Chrome unpacked-extension path | `~/workspace/wechat-reader-extension-stable` |
+| Personal reading notes | `~/workspace/reading-notes` |
 | Test article | `https://mp.weixin.qq.com/s/YZgBZW6589GIjsOvYUZ1fg` |
 
 ---
@@ -225,7 +225,7 @@
 
 ### Interaction Rule Added
 
-Workspace rule added to `/Users/didi/work/work-hub/AGENTS.md`:
+Workspace rule added to `<work-hub>/AGENTS.md`:
 
 > When the user mentions the WeChat reading plugin, ask whether to record it to the reading plugin log and convert it into a backlog item.
 
@@ -255,7 +255,7 @@ chat feedback → interaction log → backlog → implementation → reload exte
 
 ### Product / Repository Implication
 
-- The extension already has a GitHub remote: `https://github.com/AustenS26/wechat-reader-extension.git`.
+- The extension already has a GitHub remote: `https://github.com/<owner>/wechat-reader-extension.git`.
 - The repository initially lacked a `README.md`, making the project hard to understand from GitHub.
 - The first documentation pass left too many operational files in the root directory, making the repo visually noisy.
 - Setup instructions should document the stable local path and Chrome unpacked-extension workflow.
@@ -335,7 +335,7 @@ chat feedback → interaction log → backlog → implementation → reload exte
 ### Implementation Added
 
 - Moved Chrome extension files into `extension/`.
-- Updated stable local path to point `/Users/didi/work/wechat-reader-extension` at `.../wechat-reader-extension/extension`.
+- Updated stable local path to point `~/workspace/wechat-reader-extension-stable` at `.../wechat-reader-extension/extension`.
 - Content script now extracts paragraph ids.
 - Analysis output now includes `Core Excerpts`.
 - `[P#]` references in the side panel are clickable and scroll the original WeChat article to the matching paragraph.
