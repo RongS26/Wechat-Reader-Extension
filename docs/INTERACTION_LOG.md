@@ -461,3 +461,12 @@ chat feedback → interaction log → backlog → implementation → reload exte
 - Analysis payload carries `platform / platformLabel / images[] / isVideo`; text-only analyses explicitly tell the model images exist but are not provided (anti-hallucination guard until WR-020).
 - Note export gains platform + `## Images` ([IMG#] URL list) for the future content library.
 - manifest 1.1.0: xiaohongshu.com content script match; platform-aware detection and error copy in side panel.
+
+### Implementation Added (2026-07-03, rename + Phase 2 multimodal)
+
+- Renamed to Reader AI (manifest / side panel / options / README / SETUP); repo name kept for history.
+- Excerpt fix: content element resolved per-selection instead of once at boot — ✦ Add Excerpt now appears on XHS SPA note pages and survives DOM re-renders.
+- WR-020 multimodal: images fetched in the side panel, downscaled to ≤1024px JPEG, sent as base64 blocks (Anthropic & OpenAI-compat wire formats); capped at 6 images.
+- `[IMG#]` citation system parallel to `[P#]`: live images tagged `data-wrai-image` at extraction, amber pill buttons in analysis, click scrolls the page to the image with highlight.
+- 图文分析 toggle in detected state — default ON for Xiaohongshu (image-first), OFF for WeChat long-form; label shows image cap and token-cost hint.
+- Text-only analyses keep the anti-hallucination notice; chat/comment flows stay text-only to save tokens.

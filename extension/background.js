@@ -40,6 +40,25 @@ const PROVIDERS = {
   }
 };
 
+// Messages may carry multimodal content: an array of blocks
+// { type: 'text', text } | { type: 'image', mediaType, data(base64) }.
+// Each provider path converts to its own wire format; plain strings pass through.
+function toAnthropicContent(content) {
+  if (typeof content === 'string') return content;
+  return content.map(block => block.type === 'image'
+    ? { type: 'image', source: { type: 'base64', media_type: block.mediaType, data: block.data } }
+    : { type: 'text', text: block.text }
+  );
+}
+
+function toOpenAIContent(content) {
+  if (typeof content === 'string') return content;
+  return content.map(block => block.type === 'image'
+    ? { type: 'image_url', image_url: { url: `data:${block.mediaType};base64,${block.data}` } }
+    : { type: 'text', text: block.text }
+  );
+}
+
 async function callAnthropic({ baseUrl, apiKey, model, system, messages }) {
   const res = await fetch(`${baseUrl}/v1/messages`, {
     method: 'POST',
@@ -48,7 +67,10 @@ async function callAnthropic({ baseUrl, apiKey, model, system, messages }) {
       'x-api-key': apiKey,
       'anthropic-version': '2023-06-01'
     },
-    body: JSON.stringify({ model, max_tokens: 2048, system, messages })
+    body: JSON.stringify({
+      model, max_tokens: 2048, system,
+      messages: messages.map(m => ({ role: m.role, content: toAnthropicContent(m.content) }))
+    })
   });
   const data = await res.json();
   if (!res.ok) throw new Error(`Anthropic API ${res.status}: ${data.error?.message || res.statusText}`);
@@ -57,9 +79,10 @@ async function callAnthropic({ baseUrl, apiKey, model, system, messages }) {
 }
 
 async function callOpenAICompat({ baseUrl, apiKey, model, system, messages }) {
+  const converted = messages.map(m => ({ role: m.role, content: toOpenAIContent(m.content) }));
   const oaiMessages = system
-    ? [{ role: 'system', content: system }, ...messages]
-    : messages;
+    ? [{ role: 'system', content: system }, ...converted]
+    : converted;
 
   const res = await fetch(`${baseUrl}/v1/chat/completions`, {
     method: 'POST',
@@ -228,12 +251,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
-  if (message.type === 'scrollToParagraph') {
+  if (message.type === 'scrollToParagraph' || message.type === 'scrollToImage') {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (!tabs[0]) { sendResponse({ error: 'No active tab' }); return; }
       chrome.tabs.sendMessage(
         tabs[0].id,
-        { type: 'scrollToParagraph', paragraphId: message.paragraphId },
+        { type: message.type, paragraphId: message.paragraphId, imageId: message.imageId },
         (response) => {
           if (chrome.runtime.lastError) {
             sendResponse({ error: chrome.runtime.lastError.message });

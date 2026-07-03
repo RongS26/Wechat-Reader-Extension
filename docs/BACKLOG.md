@@ -37,7 +37,7 @@
 | WR-017 | P1 | Comment-driven regeneration should respect section semantics | “把洞察延伸成一些补充建议…结果有点一般” | Extension-type comments create a dedicated Action Ideas section with [P#] anchors and reader-profile awareness, instead of mutating Key Insights; add style constraint to reduce generic consultant tone. | Verify |
 | WR-018 | P1 | Cache analysis per article URL | 验收发现重开同文会重新调用 API | Store analysis结果 keyed by URL in chrome.storage; on reopen, load cache instantly with a Refresh action to re-run. | Verify |
 | WR-019 | P1 | Xiaohongshu adapter + 图文抽取 | “有可能做这个extension囊括…小红书内容吗” | Site-adapter refactor (wechat/xhs); XHS note title/author/desc/images extraction with selector fallbacks + og: meta fallback; video-note detection; platform-aware UI copy; images carried in note export as [IMG#] list. | Verify |
-| WR-020 | P1 | Multimodal image analysis (Phase 2) | “不能只做文字的，要做图文的，之前对微信文章其实也有这个需求” | Feed images (base64, capped/compressed) to multimodal providers; [IMG#] citation system alongside [P#]; per-platform default toggle (xhs on, wechat off). | Proposed |
+| WR-020 | P1 | Multimodal image analysis (Phase 2) | “不能只做文字的，要做图文的，之前对微信文章其实也有这个需求” | Feed images (base64, capped/compressed) to multimodal providers; [IMG#] citation system alongside [P#]; per-platform default toggle (xhs on, wechat off). | Verify |
 | WR-021 | P2 | Link inbox + auto-analyze (Phase 3) | “真实流程一般是手机端看帖子然后发给自己的微信” | Paste multiple links into side panel; queue open→analyze→save; auto-analyze toggle on supported pages. | Proposed |
 | WR-022 | P2 | Content library asset pipeline (Phase 4) | “输出不一定直接变成小红书，还是有个内容库” | Notes with image assets land in content-os; ties to work-hub T066. | Proposed |
 

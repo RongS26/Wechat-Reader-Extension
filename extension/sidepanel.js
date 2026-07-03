@@ -119,9 +119,15 @@ function renderBullets(raw) {
     .split('\n')
     .map(line => line.replace(/^\s*(?:[•\-\*①②③④⑤]|[0-9]+[.)])\s*/, '').trim())
     .filter(Boolean)
-    .map(l => `<li>${linkParagraphRefs(escapeHtml(stripMarkdownNoise(l)))}</li>`)
+    .map(l => `<li>${linkImageRefs(linkParagraphRefs(escapeHtml(stripMarkdownNoise(l))))}</li>`)
     .join('');
   return `<ul>${items}</ul>`;
+}
+
+function linkImageRefs(html) {
+  return html.replace(/\[IMG(\d+)\]/gi, (match, id) =>
+    `<button class="img-ref" data-iid="${id}" title="Jump to image IMG${id}">IMG${id}</button>`
+  );
 }
 
 function linkParagraphRefs(html) {
@@ -260,7 +266,7 @@ function renderExcerptCards(items = []) {
     const refBtn = ids.length
       ? `<button class="para-ref" data-pid="${ids[0]}"${ids.length > 1 ? ` data-pids="${ids.join(',')}"` : ''} title="Jump to paragraph ${refLabel}">${refLabel}</button>`
       : '';
-    const aiSnippets = (item.aiSnippets || []).map(s => escapeHtml(stripMarkdownNoise(s))).filter(Boolean);
+    const aiSnippets = (item.aiSnippets || []).map(s => linkImageRefs(escapeHtml(stripMarkdownNoise(s)))).filter(Boolean);
     return `
       <div class="excerpt-card">
         <div class="excerpt-card-head">
@@ -428,6 +434,7 @@ async function detectArticle({ silent = false } = {}) {
   if (article.isVideo) detectedBits.push('视频笔记');
   $('detected-message').textContent =
     `已识别（${article.platformLabel || '文章'}）：${article.title || 'Untitled'}\n${detectedBits.join(' · ')}`;
+  syncImageToggle();
   showState('detected');
   return true;
 }
@@ -445,19 +452,38 @@ async function analyzeArticle({ force = false } = {}) {
     }
   }
 
+  const baseText = `Title: ${article.title}\nAuthor: ${article.author}\nDate: ${article.date}\nURL: ${article.url}\n\n${articleText}`;
+  let userContent = baseText;
+  let imagesRule = '';
+
+  if (wantImageAnalysis()) {
+    $('loading-message').textContent = '正在读取图片…';
+    showState('loading');
+    const blocks = (await Promise.all(
+      article.images.slice(0, MAX_ANALYSIS_IMAGES).map(fetchImageBlock)
+    )).filter(Boolean);
+
+    if (blocks.length) {
+      const providedIds = blocks.map(b => `IMG${b.id}`).join(', ');
+      imagesRule = `The content includes images numbered [IMG1], [IMG2], … provided after the text (available: ${providedIds}). Read them as part of the content. Cite [IMG#] the same way as [P#] when an insight, excerpt, or conclusion draws on an image. Do not describe images that were not provided.`;
+      userContent = [{ type: 'text', text: `${baseText}\n\nImages follow, each preceded by its id.` }];
+      blocks.forEach(block => {
+        userContent.push({ type: 'text', text: `[IMG${block.id}]` });
+        userContent.push({ type: 'image', mediaType: block.mediaType, data: block.data });
+      });
+    }
+  }
+
+  if (typeof userContent === 'string' && (article.images?.length || article.isVideo)) {
+    userContent += `\n\n[Note: this ${article.platformLabel || ''} content also contains ${article.images?.length || 0} image(s)${article.isVideo ? ' and video' : ''} that are NOT included in this text-only analysis. Do not guess or invent what the images/video show.]`;
+  }
+
   $('loading-message').textContent = '正在生成结构化阅读结果…';
   showState('loading');
 
-  const mediaNotice = article.images?.length || article.isVideo
-    ? `\n\n[Note: this ${article.platformLabel || ''} content also contains ${article.images?.length || 0} image(s)${article.isVideo ? ' and video' : ''} that are NOT included in this text-only analysis. Do not guess or invent what the images/video show.]`
-    : '';
-
   const res = await msg('callAI', {
-    system: buildAnalysisSystem(),
-    messages: [{
-      role: 'user',
-      content: `Title: ${article.title}\nAuthor: ${article.author}\nDate: ${article.date}\nURL: ${article.url}\n\n${articleText}${mediaNotice}`
-    }]
+    system: buildAnalysisSystem(imagesRule),
+    messages: [{ role: 'user', content: userContent }]
   });
 
   if (res?.error) {
@@ -538,6 +564,52 @@ async function loadAnalysisRules() {
 async function loadReaderProfile() {
   const stored = await chrome.storage.sync.get(['readerProfile']);
   readerProfile = (stored.readerProfile || '').trim();
+}
+
+// --- Multimodal image pipeline (WR-020) ---
+const MAX_ANALYSIS_IMAGES = 6;
+const MAX_IMAGE_EDGE = 1024;
+
+async function fetchImageBlock(img) {
+  try {
+    const resp = await fetch(img.src);
+    if (!resp.ok) return null;
+    const blob = await resp.blob();
+    if (!/^image\//.test(blob.type)) return null;
+    const bitmap = await createImageBitmap(blob);
+    const scale = Math.min(1, MAX_IMAGE_EDGE / Math.max(bitmap.width, bitmap.height));
+    const canvas = new OffscreenCanvas(
+      Math.max(1, Math.round(bitmap.width * scale)),
+      Math.max(1, Math.round(bitmap.height * scale))
+    );
+    canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const out = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.8 });
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result).split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(out);
+    });
+    return { id: img.id, mediaType: 'image/jpeg', data: base64 };
+  } catch (_) {
+    return null; // referer-blocked or broken image: analysis degrades gracefully
+  }
+}
+
+function wantImageAnalysis() {
+  return Boolean($('toggle-images')?.checked && article?.images?.length);
+}
+
+function syncImageToggle() {
+  const row = $('img-toggle-row');
+  if (!row) return;
+  const count = article?.images?.length || 0;
+  row.classList.toggle('hidden', !count);
+  if (!count) return;
+  const capped = Math.min(count, MAX_ANALYSIS_IMAGES);
+  $('toggle-images-label').textContent = `图文分析（取前 ${capped} 张图，消耗更多 token）`;
+  // XHS notes are image-first: default on; long-form WeChat articles default off
+  $('toggle-images').checked = article?.platform === 'xhs';
 }
 
 // --- Analysis cache (per article URL) ---
@@ -812,6 +884,16 @@ $('comment-input').addEventListener('focus', () => {
 });
 
 $('main-content').addEventListener('click', async event => {
+  const imgRef = event.target.closest('.img-ref');
+  if (imgRef) {
+    const res = await msg('scrollToImage', { imageId: imgRef.dataset.iid });
+    if (res?.error) {
+      $('comment-status').textContent = res.error;
+      setTimeout(() => $('comment-status').textContent = '', 2400);
+    }
+    return;
+  }
+
   const ref = event.target.closest('.para-ref');
   if (ref) {
     const pids = String(ref.dataset.pids || '').split(',').map(v => v.trim()).filter(Boolean);

@@ -22,11 +22,9 @@ const SITE_ADAPTERS = {
     )?.innerText?.trim() || '',
     paragraphSelector: 'p, section, blockquote, li',
     minContentLength: 80,
-    images(contentEl) {
+    imageEls(contentEl) {
       if (!contentEl) return [];
-      return Array.from(contentEl.querySelectorAll('img'))
-        .map(img => img.dataset?.src || img.currentSrc || img.src || '')
-        .filter(src => /^https?:/.test(src));
+      return Array.from(contentEl.querySelectorAll('img'));
     },
     isVideo: () => false
   },
@@ -55,21 +53,15 @@ const SITE_ADAPTERS = {
       document.querySelector('.date')?.innerText?.trim() || '',
     paragraphSelector: 'p, .note-text > span, .desc > span',
     minContentLength: 20,
-    images() {
-      const urls = [];
-      const push = src => {
-        if (!src || !/^https?:/.test(src)) return;
-        const clean = src.split('?')[0]; // CDN params differ across duplicated slides
-        if (!urls.some(u => u.split('?')[0] === clean)) urls.push(src);
-      };
-      document.querySelectorAll(
+    imageEls() {
+      return Array.from(document.querySelectorAll(
         '.media-container img, .swiper-slide img, .img-container img, .carousel img'
-      ).forEach(img => push(img.currentSrc || img.src || img.dataset?.src));
-      if (!urls.length) {
-        document.querySelectorAll('meta[name="og:image"], meta[property="og:image"]')
-          .forEach(meta => push(meta.content));
-      }
-      return urls;
+      ));
+    },
+    metaImages() {
+      return Array.from(document.querySelectorAll('meta[name="og:image"], meta[property="og:image"]'))
+        .map(meta => meta.content)
+        .filter(src => /^https?:/.test(src || ''));
     },
     isVideo: () => Boolean(
       document.querySelector('meta[name="og:video"], meta[property="og:video"]') ||
@@ -230,9 +222,33 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }
     }
 
-    let images = [];
-    try { images = adapter.images(contentEl) || []; } catch (_) { images = []; }
-    images = images.slice(0, 20).map((src, index) => ({ id: index + 1, src }));
+    // Collect images: dedupe by URL (ignoring CDN params), assign stable ids,
+    // and tag live elements with data-wrai-image so [IMG#] refs can jump back.
+    let imageEls = [];
+    try { imageEls = adapter.imageEls ? (adapter.imageEls(contentEl) || []) : []; } catch (_) { imageEls = []; }
+    const seenImages = new Set();
+    const images = [];
+    for (const el of imageEls) {
+      const src = el.dataset?.src || el.currentSrc || el.src || '';
+      if (!/^https?:/.test(src)) continue;
+      const clean = src.split('?')[0];
+      if (seenImages.has(clean)) continue;
+      seenImages.add(clean);
+      const id = images.length + 1;
+      el.dataset.wraiImage = String(id);
+      images.push({ id, src });
+      if (images.length >= 20) break;
+    }
+    if (!images.length && adapter.metaImages) {
+      try {
+        adapter.metaImages().forEach(src => {
+          const clean = src.split('?')[0];
+          if (seenImages.has(clean) || images.length >= 20) return;
+          seenImages.add(clean);
+          images.push({ id: images.length + 1, src });
+        });
+      } catch (_) { /* meta fallback only */ }
+    }
     const isVideo = Boolean(read(adapter.isVideo));
 
     const languageBase = `${title}\n${content}`;
@@ -261,6 +277,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       images,
       isVideo
     });
+  }
+
+  if (message.type === 'scrollToImage') {
+    const id = String(message.imageId || '').replace(/\D/g, '');
+    const target = document.querySelector(`[data-wrai-image="${id}"]`);
+    if (!target) {
+      sendResponse({ error: `Image IMG${id} was not found on the page.` });
+      return true;
+    }
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    target.style.transition = 'outline 0.2s ease';
+    target.style.outline = '3px solid rgba(7, 193, 96, 0.6)';
+    setTimeout(() => { target.style.outline = ''; }, 1800);
+    sendResponse({ ok: true });
+    return true;
   }
 
   if (message.type === 'scrollToParagraph') {
