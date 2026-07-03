@@ -98,6 +98,16 @@ async function callOpenAICompat({ baseUrl, apiKey, model, system, messages }) {
   return data.choices[0].message.content;
 }
 
+// Vision capability by provider/model. DeepSeek's chat API has no image input;
+// Moonshot/Zhipu only in their -vision / glm-4v variants; model-name patterns win.
+function supportsVision(providerId, model) {
+  const m = String(model || '').toLowerCase();
+  if (/vision|-vl|glm-4v|gpt-4o|gpt-4\.1|gpt-5|o[34]|claude|gemini|qwen-vl/.test(m)) return true;
+  if (providerId === 'anthropic') return true;
+  if (providerId === 'openai') return true;
+  return false;
+}
+
 async function callAI({ system, messages }) {
   const { providers = {}, activeProvider = 'anthropic' } = await chrome.storage.sync.get(['providers', 'activeProvider']);
 
@@ -272,6 +282,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'getProviders') {
     sendResponse({ PROVIDERS });
     return false;
+  }
+
+  if (message.type === 'getActiveProvider') {
+    (async () => {
+      const { providers = {}, activeProvider = 'anthropic' } = await chrome.storage.sync.get(['providers', 'activeProvider']);
+      const def = PROVIDERS[activeProvider] || {};
+      const model = providers[activeProvider]?.model || def.defaultModel || '';
+      sendResponse({
+        id: activeProvider,
+        name: def.name || activeProvider,
+        model,
+        vision: supportsVision(activeProvider, model)
+      });
+    })().catch(err => sendResponse({ error: err.message }));
+    return true;
   }
 
   if (message.type === 'saveNote') {

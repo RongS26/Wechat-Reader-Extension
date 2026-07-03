@@ -434,7 +434,7 @@ async function detectArticle({ silent = false } = {}) {
   if (article.isVideo) detectedBits.push('视频笔记');
   $('detected-message').textContent =
     `已识别（${article.platformLabel || '文章'}）：${article.title || 'Untitled'}\n${detectedBits.join(' · ')}`;
-  syncImageToggle();
+  await syncImageToggle();
   showState('detected');
   return true;
 }
@@ -457,10 +457,18 @@ async function analyzeArticle({ force = false } = {}) {
   let imagesRule = '';
 
   if (wantImageAnalysis()) {
+    // Guard against provider switches after the toggle was set (e.g. → DeepSeek)
+    const provider = await msg('getActiveProvider');
+    if (provider?.vision === false) {
+      showExcerptToast(`${provider.name} 不支持图片输入，本次按纯文本分析`);
+    } else {
     $('loading-message').textContent = '正在读取图片…';
     showState('loading');
+    // Many images → smaller per-image resolution to keep token cost bounded
+    const picked = article.images.slice(0, MAX_ANALYSIS_IMAGES);
+    const maxEdge = picked.length > 6 ? 768 : 1024;
     const blocks = (await Promise.all(
-      article.images.slice(0, MAX_ANALYSIS_IMAGES).map(fetchImageBlock)
+      picked.map(img => fetchImageBlock(img, maxEdge))
     )).filter(Boolean);
 
     if (blocks.length) {
@@ -471,6 +479,7 @@ async function analyzeArticle({ force = false } = {}) {
         userContent.push({ type: 'text', text: `[IMG${block.id}]` });
         userContent.push({ type: 'image', mediaType: block.mediaType, data: block.data });
       });
+    }
     }
   }
 
@@ -567,17 +576,16 @@ async function loadReaderProfile() {
 }
 
 // --- Multimodal image pipeline (WR-020) ---
-const MAX_ANALYSIS_IMAGES = 6;
-const MAX_IMAGE_EDGE = 1024;
+const MAX_ANALYSIS_IMAGES = 12;
 
-async function fetchImageBlock(img) {
+async function fetchImageBlock(img, maxEdge = 1024) {
   try {
     const resp = await fetch(img.src);
     if (!resp.ok) return null;
     const blob = await resp.blob();
     if (!/^image\//.test(blob.type)) return null;
     const bitmap = await createImageBitmap(blob);
-    const scale = Math.min(1, MAX_IMAGE_EDGE / Math.max(bitmap.width, bitmap.height));
+    const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
     const canvas = new OffscreenCanvas(
       Math.max(1, Math.round(bitmap.width * scale)),
       Math.max(1, Math.round(bitmap.height * scale))
@@ -597,19 +605,33 @@ async function fetchImageBlock(img) {
 }
 
 function wantImageAnalysis() {
-  return Boolean($('toggle-images')?.checked && article?.images?.length);
+  return Boolean($('toggle-images')?.checked && !$('toggle-images')?.disabled && article?.images?.length);
 }
 
-function syncImageToggle() {
+async function syncImageToggle() {
   const row = $('img-toggle-row');
   if (!row) return;
   const count = article?.images?.length || 0;
   row.classList.toggle('hidden', !count);
   if (!count) return;
+
+  const box = $('toggle-images');
+  const provider = await msg('getActiveProvider');
+  if (provider && provider.vision === false) {
+    box.checked = false;
+    box.disabled = true;
+    $('toggle-images-label').textContent =
+      `图片分析不可用：${provider.name}（${provider.model}）不支持图片输入。切换到 Claude / GPT-4o 等多模态模型即可启用图文分析。`;
+    return;
+  }
+
+  box.disabled = false;
   const capped = Math.min(count, MAX_ANALYSIS_IMAGES);
-  $('toggle-images-label').textContent = `图文分析（取前 ${capped} 张图，消耗更多 token）`;
+  $('toggle-images-label').textContent = capped === count
+    ? `图文分析（全部 ${count} 张图）`
+    : `图文分析（前 ${capped}/${count} 张，超出部分为成本上限截断）`;
   // XHS notes are image-first: default on; long-form WeChat articles default off
-  $('toggle-images').checked = article?.platform === 'xhs';
+  box.checked = article?.platform === 'xhs';
 }
 
 // --- Analysis cache (per article URL) ---

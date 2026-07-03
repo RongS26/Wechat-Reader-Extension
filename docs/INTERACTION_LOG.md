@@ -470,3 +470,8 @@ chat feedback → interaction log → backlog → implementation → reload exte
 - `[IMG#]` citation system parallel to `[P#]`: live images tagged `data-wrai-image` at extraction, amber pill buttons in analysis, click scrolls the page to the image with highlight.
 - 图文分析 toggle in detected state — default ON for Xiaohongshu (image-first), OFF for WeChat long-form; label shows image cap and token-cost hint.
 - Text-only analyses keep the anti-hallucination notice; chat/comment flows stay text-only to save tokens.
+
+### Follow-up Fixes (2026-07-03, image cap + provider vision)
+
+- User: “为什么默认选择了前X张图，在我有Y张图的情况下” → cap raised 6→12; >6 images auto-downscale to 768px to bound token cost; toggle label now honest: “全部 Y 张” or “前 12/Y 张（成本上限截断）”.
+- User: “用的是deepseek的API key为什么识别不了图片” → DeepSeek chat API has no image input. Added provider vision-capability detection (`supportsVision` in background): non-vision providers get a disabled toggle with an explicit reason + suggested switch; re-analyze path double-checks and degrades to text-only with a toast instead of failing silently. Aligns with the Model Transparency collaboration rule (2026-07-03).
