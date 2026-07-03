@@ -14,6 +14,7 @@
     </header>
 
     <div id="article-bar" class="article-bar hidden">
+      <button id="btn-reanalyze" class="icon-btn small reanalyze hidden" title="重新分析（忽略缓存，重新调用 AI）">⟳</button>
       <div id="article-title" class="article-title"></div>
       <div id="article-meta" class="article-meta"></div>
     </div>
@@ -66,6 +67,12 @@
       <section class="section">
         <h3 class="section-title">Reader Value</h3>
         <div id="reader-value-text" class="section-body"></div>
+      </section>
+
+      <section class="section hidden" id="action-ideas-section">
+        <h3 class="section-title">Action Ideas</h3>
+        <div class="section-hint">由你的批注延伸生成，锚定原文段落、贴合你的画像。</div>
+        <div id="action-ideas-text" class="section-body"></div>
       </section>
 
       <section class="section">

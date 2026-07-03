@@ -6,6 +6,7 @@ let chatHistory = [];
 let commentLog = [];
 let analysisRules = [];
 let selectedExcerpts = [];
+let readerProfile = '';
 const RULES_KEY = 'wechatReaderAnalysisRules';
 
 const $ = id => document.getElementById(id);
@@ -16,6 +17,7 @@ const SECTION_HEADERS = [
   'KEY INSIGHTS',
   'CORE EXCERPTS',
   'READER VALUE',
+  'ACTION IDEAS',
   'CORE CONCLUSION',
   'AUTHOR INTENT'
 ];
@@ -106,7 +108,8 @@ function parseAnalysis(text) {
     insights: extractSection(cleaned, 'KEY INSIGHTS', SECTION_HEADERS.slice(3)),
     excerpts: extractSection(cleaned, 'CORE EXCERPTS', SECTION_HEADERS.slice(4)),
     readerValue: extractSection(cleaned, 'READER VALUE', SECTION_HEADERS.slice(5)),
-    conclusion: extractSection(cleaned, 'CORE CONCLUSION', SECTION_HEADERS.slice(6)),
+    actionIdeas: extractSection(cleaned, 'ACTION IDEAS', SECTION_HEADERS.slice(6)),
+    conclusion: extractSection(cleaned, 'CORE CONCLUSION', SECTION_HEADERS.slice(7)),
     authorIntent: extractSection(cleaned, 'AUTHOR INTENT', [])
   };
 }
@@ -157,6 +160,14 @@ ${analysisRules.map((rule, index) => `${index + 1}. ${rule}`).join('\n')}
 These preferences are always on unless the user explicitly overrides them.`;
 }
 
+function buildReaderProfileBlock() {
+  if (!readerProfile) return '';
+  return `Reader profile — every section is written for THIS specific reader, not a generic audience:
+${readerProfile}
+
+Reader Value and any action-oriented content must map to this reader's real context and vocabulary. Never produce advice aimed at an abstract company or generic team.`;
+}
+
 function buildChatSystem() {
   const preferenceBlock = buildPreferenceBlock();
   const languageRule = articleLanguage === 'en'
@@ -176,6 +187,8 @@ function renderAnalysis(analysis) {
   $('insights-text').innerHTML = analysis.insights ? renderBullets(analysis.insights) : '';
   $('excerpts-text').innerHTML = renderExcerptCards(buildExcerptItems(analysis.excerpts, selectedExcerpts));
   $('reader-value-text').innerHTML = analysis.readerValue ? renderBullets(analysis.readerValue) : '';
+  $('action-ideas-text').innerHTML = analysis.actionIdeas ? renderBullets(analysis.actionIdeas) : '';
+  $('action-ideas-section').classList.toggle('hidden', !analysis.actionIdeas);
 }
 
 function buildExcerptItems(aiExcerpts = '', userExcerpts = []) {
@@ -333,6 +346,7 @@ function buildAnalysisSystem(extra = '') {
     ? `The source article is English. Output every section bilingually: first English, then Chinese. Keep the Chinese concise but complete.`
     : `The source article is Chinese. Output in Chinese only unless a direct English translation helps clarify a proper noun or technical term.`;
   const preferenceBlock = buildPreferenceBlock();
+  const profileBlock = buildReaderProfileBlock();
   return `You are a reading assistant. Analyze the article and respond in the same language as the article content (Chinese or English).
 
 Format your response EXACTLY using these section headers in this order. Do not add extra headers or change the names.
@@ -341,7 +355,7 @@ Inside the body of each section, avoid markdown decoration such as ###, **, __, 
 Always prioritize substance over outline. The user does not need a simple article structure recap. Explain the core points clearly, extract a small number of strong insights, and evaluate the article from reader perspectives.
 The article text is numbered by paragraph as [P1], [P2], etc. Use these paragraph ids when citing evidence. Keep excerpts short; do not quote long passages.
 ${languageRule}
-${preferenceBlock ? `\n${preferenceBlock}\n` : '\n'}
+${profileBlock ? `\n${profileBlock}\n` : ''}${preferenceBlock ? `\n${preferenceBlock}\n` : '\n'}
 
 SUMMARY
 [3-5 sentences: what is this article about, what does it really argue, and why it matters]
@@ -401,14 +415,31 @@ async function detectArticle({ silent = false } = {}) {
     : article.content
   ).slice(0, 10000);
   renderArticleBar();
+
+  // Cached analysis for this URL renders instantly — no repeat API call (WR-018)
+  const cached = await loadCachedAnalysis();
+  if (cached) {
+    await presentAnalysis(cached.raw, { cached: true });
+    return true;
+  }
+
   $('detected-message').textContent = `已识别：${article.title || 'Untitled'}\n正文约 ${article.content.length.toLocaleString()} 字符`;
   showState('detected');
   return true;
 }
 
-async function analyzeArticle() {
+async function analyzeArticle({ force = false } = {}) {
   if (!article && !(await detectArticle({ silent: true }))) return;
   if (!analysisRules.length) await loadAnalysisRules();
+  await loadReaderProfile();
+
+  if (!force) {
+    const cached = await loadCachedAnalysis();
+    if (cached) {
+      await presentAnalysis(cached.raw, { cached: true });
+      return;
+    }
+  }
 
   $('loading-message').textContent = '正在生成结构化阅读结果…';
   showState('loading');
@@ -426,21 +457,15 @@ async function analyzeArticle() {
     return;
   }
 
-  renderAnalysis(parseAnalysis(res.result));
-  chatHistory = [
-    { role: 'user', content: `Article title: ${article.title}\n\n${articleText}` },
-    { role: 'assistant', content: res.result }
-  ];
-  await loadCommentLog();
-  await loadAnalysisRules();
-  await loadSelectedExcerpts();
-  showState('ready');
+  await saveCachedAnalysis(res.result);
+  await presentAnalysis(res.result);
 }
 
 async function applyComment() {
   const comment = $('comment-input').value.trim();
   if (!comment || !currentAnalysis) return;
   if (!analysisRules.length) await loadAnalysisRules();
+  await loadReaderProfile();
 
   $('btn-apply-comment').disabled = true;
   $('comment-status').textContent = 'Optimizing…';
@@ -448,8 +473,20 @@ async function applyComment() {
   const res = await msg('callAI', {
     system: buildAnalysisSystem(`The user has given a comment about the current output. Treat the comment as structured product feedback.
 
-Classify the comment internally as one of: EDIT, RESEARCH_REQUEST, STYLE, ACTIONABLE_NOTES, or AMBIGUOUS.
-Then revise the seven-section output directly. If the comment is ambiguous, make the most useful conservative improvement and mention uncertainty inside the relevant section, not as an extra header.
+First classify the comment internally as one of:
+- CORRECTION: fix a factual or emphasis problem in an existing section
+- STYLE: change tone, length, or format
+- EXTENSION: extend insights into suggestions, actions, or implications (e.g. "把洞察延伸成建议/行动")
+- AMBIGUOUS
+
+Then apply these section-contract rules strictly:
+1. Each section keeps its own semantics. KEY INSIGHTS only holds synthesized insights; never append advice, suggestions, or to-dos inside it.
+2. For EXTENSION comments: leave all existing sections unchanged (byte-identical where possible) and write the new content into the ACTION IDEAS section, placed between READER VALUE and CORE CONCLUSION. 2-4 items maximum.
+3. Every ACTION IDEAS item must (a) cite the paragraph it grows from as [P#], (b) be a concrete move THIS reader (see reader profile) could actually make in their own work or content pipeline within weeks, and (c) name the reader's real context, not an abstract company. Never invent generic organizational roles, policies, or committee-style advice. Avoid consultant clichés (一刀切、赋能、抓手、闭环式空话).
+4. For CORRECTION/STYLE comments: revise only the affected sections in place; do not touch the rest.
+5. If AMBIGUOUS, make the most useful conservative improvement and mention the uncertainty inside the relevant section, not as an extra header.
+
+Output the full document with the exact section headers. Include ACTION IDEAS only when it has content.
 Do not invent facts beyond the article unless the user explicitly asks for broader interpretation.`),
     messages: [
       { role: 'user', content: `Article:\n${articleText}` },
@@ -470,6 +507,7 @@ Do not invent facts beyond the article unless the user explicitly asks for broad
   chatHistory.push({ role: 'user', content: `Please revise the analysis based on this comment: ${comment}` });
   chatHistory.push({ role: 'assistant', content: res.result });
 
+  await saveCachedAnalysis(res.result);
   await saveCommentLog(comment);
   await maybeSaveAnalysisRule(comment);
   $('comment-input').value = '';
@@ -487,6 +525,43 @@ async function loadCommentLog() {
 async function loadAnalysisRules() {
   const stored = await chrome.storage.sync.get([RULES_KEY]);
   analysisRules = Array.isArray(stored[RULES_KEY]) ? stored[RULES_KEY] : [];
+}
+
+async function loadReaderProfile() {
+  const stored = await chrome.storage.sync.get(['readerProfile']);
+  readerProfile = (stored.readerProfile || '').trim();
+}
+
+// --- Analysis cache (per article URL) ---
+function analysisCacheKey() {
+  return article?.url ? `analysis:${article.url}` : '';
+}
+
+async function loadCachedAnalysis() {
+  const key = analysisCacheKey();
+  if (!key) return null;
+  const stored = await chrome.storage.local.get([key]);
+  return stored[key]?.raw ? stored[key] : null;
+}
+
+async function saveCachedAnalysis(raw) {
+  const key = analysisCacheKey();
+  if (!key || !raw) return;
+  await chrome.storage.local.set({ [key]: { raw, ts: new Date().toISOString() } });
+}
+
+async function presentAnalysis(raw, { cached = false } = {}) {
+  renderAnalysis(parseAnalysis(raw));
+  chatHistory = [
+    { role: 'user', content: `Article title: ${article.title}\n\n${articleText}` },
+    { role: 'assistant', content: raw }
+  ];
+  await loadCommentLog();
+  await loadAnalysisRules();
+  await loadSelectedExcerpts();
+  showState('ready');
+  $('btn-reanalyze')?.classList.remove('hidden');
+  if (cached) showExcerptToast('已载入缓存分析 · 点 ⟳ 可重新生成');
 }
 
 async function loadSelectedExcerpts() {
@@ -638,6 +713,7 @@ function buildCurrentNote() {
     insights: $('insights-text').innerText,
     excerpts: serializeExcerptItems(excerptItems),
     readerValue: $('reader-value-text').innerText,
+    actionIdeas: $('action-ideas-text').innerText,
     conclusion: $('conclusion-text').innerText,
     authorIntent: $('author-text').innerText,
     myNotes: $('my-notes').value.trim(),
@@ -659,6 +735,7 @@ function noteToMarkdown(n) {
     n.insights ? `\n## Key Insights\n${n.insights}` : '',
     n.excerpts ? `\n## Core Excerpts\n${n.excerpts}` : '',
     n.readerValue ? `\n## Reader Value\n${n.readerValue}` : '',
+    n.actionIdeas ? `\n## Action Ideas\n${n.actionIdeas}` : '',
     n.conclusion ? `\n## Core Conclusion\n${n.conclusion}` : '',
     n.authorIntent ? `\n## Author Intent\n${n.authorIntent}` : '',
     n.myNotes ? `\n## My Notes\n${n.myNotes}` : '',
@@ -677,8 +754,9 @@ function downloadMarkdown(note) {
 
 $('btn-settings').addEventListener('click', () => chrome.runtime.openOptionsPage());
 $('btn-detect').addEventListener('click', () => detectArticle());
-$('btn-analyze').addEventListener('click', analyzeArticle);
+$('btn-analyze').addEventListener('click', () => analyzeArticle());
 $('btn-retry').addEventListener('click', () => detectArticle());
+$('btn-reanalyze').addEventListener('click', () => analyzeArticle({ force: true }));
 $('btn-apply-comment').addEventListener('click', applyComment);
 
 $('btn-clear-chat').addEventListener('click', () => {
@@ -773,4 +851,4 @@ function showExcerptToast(text) {
   setTimeout(() => toast.remove(), 1800);
 }
 
-Promise.all([loadAnalysisRules(), detectArticle({ silent: true })]).catch(error => showError(error.message));
+Promise.all([loadAnalysisRules(), loadReaderProfile(), detectArticle({ silent: true })]).catch(error => showError(error.message));

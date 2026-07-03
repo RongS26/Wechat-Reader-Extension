@@ -73,6 +73,16 @@
 
     <hr>
 
+    <p class="section-title">Reader Profile</p>
+    <p class="hint" style="margin-top:0">告诉 AI 你是谁、为什么读——所有分析、Reader Value 和 Action Ideas 都会写给这个具体的你，而不是泛泛的读者。自动保存。</p>
+    <textarea id="reader-profile" style="width:100%; min-height:110px; margin-top:8px; padding:10px; border:1px solid #ddd; border-radius:7px; font-size:13px; line-height:1.6; font-family:inherit; resize:vertical; box-sizing:border-box"></textarea>
+    <div style="display:flex; align-items:center; gap:10px; margin-top:6px">
+      <button class="btn-export" id="profile-reset">恢复默认画像</button>
+      <span class="save-status" id="profile-status"></span>
+    </div>
+
+    <hr>
+
     <p class="section-title">Saved Notes</p>
     <p class="notes-count" id="notes-count">Loading…</p>
     <button class="btn-export" id="btn-export">Export all notes as Markdown</button>

@@ -420,3 +420,35 @@ chat feedback → interaction log → backlog → implementation → reload exte
 ### Backlog Impact
 
 - WR-015 added and moved to Verify.
+
+---
+
+## 2026-07-02 — 集中验收 Session（文章：《关于 AI-Native 组织的思考》）
+
+### Chat Evidence
+
+| Context | User Original Words | Observed Problem / Signal |
+|---|---|---|
+| 验收步骤 1–4 | “1234都验证了没问” | 侧栏识别、中文输出/Core Points、[P#] 跳转、点选摘录+note 编辑删除全部通过 |
+| 验收步骤 5 | “改了model名字，显示auto-saveuto-save” | 设置页自动保存生效，但状态提示文字渲染叠字（疑似 options.js:34-43 'Saving…'/'Auto-saved ✓' 竞态或重复渲染） |
+| 验收步骤 6 | “不想尝试错误key，这个之后报错再说” | WR-004/005 保持 Verify，等真实报错场景再验 |
+| 验收步骤 7 | “尝试的结果有点一般，我的反馈是：把洞察延伸成一些补充建议” | 批注重生成机制跑通，但输出把泛化建议塞进 Key Insights：建议无 [P#] 锚点、不贴合读者身份、混淆了 section 语义 |
+| 历史笔记 | “不是第一条，我之前也有过note，记得都收录好” | Downloads 中 7 份历史导出已全量归集至 personal/projects/reading-notes/（阿里文 5 个迭代版本去重后保留 4+主版本） |
+
+### Product Implication
+
+- 批注重生成（WR-009）需要 section 语义约束：延伸类批注应生成独立小节（如 Action Ideas），不应改写 Key Insights 本体；新增内容需带 [P#] 锚点并贴合读者画像。
+- 分析结果需按 URL 缓存，重开不重跑（省 API、秒开）。
+
+### Backlog Impact
+
+- WR-003/006/009/010/011/012/013/014/015 → Done。
+- 新增 WR-016（auto-save 状态叠字）、WR-017（批注重生成质量）、WR-018（分析结果缓存）。
+
+### Implementation Added (2026-07-02, same session)
+
+- WR-016: `saveProviderKey` now cancels pending debounce and status-clear timers before writing; `scheduleAutoSave` clears the stale clear-timer. Status text can no longer overlap.
+- WR-017: comment classification (CORRECTION / STYLE / EXTENSION / AMBIGUOUS) with section-contract rules; EXTENSION comments write into a new dedicated `ACTION IDEAS` section ([P#]-anchored, reader-profile-aware, consultant-cliché ban) and leave Key Insights untouched.
+- Reader Profile: new options-page field (auto-saved, default profile pre-written from owner's context: LatAm fintech PM + AI-native workflow builder + personal-IP creator); injected into every analysis, comment regeneration, and Reader Value.
+- WR-018: analysis cached per URL in `chrome.storage.local` (`analysis:<url>`); reopening an analyzed article renders instantly from cache with a toast; new ⟳ button in article bar forces re-analysis; Apply Comment updates the cache.
+- Export/save paths (side panel + options bulk export) now include Action Ideas.

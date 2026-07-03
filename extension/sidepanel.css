@@ -465,3 +465,13 @@ body {
 .btn-send:disabled { background: #ccc; cursor: not-allowed; }
 
 .hidden { display: none !important; }
+
+/* Re-analyze button pinned to the article bar (WR-018) */
+.article-bar { position: relative; }
+.icon-btn.reanalyze {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-size: 14px;
+  line-height: 1;
+}
