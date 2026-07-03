@@ -15,19 +15,19 @@ ERR_FILE_NOT_FOUND
 To avoid this, keep Chrome pointed at a stable path:
 
 ```text
-~/workspace/wechat-reader-extension-stable
+~/work/wechat-reader-extension
 ```
 
 That path should point to the real extension source directory:
 
 ```text
-~/workspace/wechat-reader-extension/extension
+~/work/projects/wechat-reader-extension/extension
 ```
 
 ### Recreate Stable Symlink
 
 ```bash
-ln -sfn ~/workspace/wechat-reader-extension/extension ~/workspace/wechat-reader-extension-stable
+ln -sfn ~/work/projects/wechat-reader-extension/extension ~/work/wechat-reader-extension
 ```
 
 ### Load in Chrome
@@ -35,7 +35,7 @@ ln -sfn ~/workspace/wechat-reader-extension/extension ~/workspace/wechat-reader-
 1. Open `chrome://extensions`.
 2. Enable `Developer mode`.
 3. Click `Load unpacked`.
-4. Select `~/workspace/wechat-reader-extension-stable`.
+4. Select `~/work/wechat-reader-extension`.
 5. Open a WeChat article.
 6. Open the extension side panel.
 

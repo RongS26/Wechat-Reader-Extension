@@ -1,191 +1,123 @@
-# WeChat Reader AI / 微信公众号阅读助手
+# Reader AI / 阅读助手
+
+> 图文内容的捕获与分析入口 —— 微信公众号 + 小红书，读进来的每一篇都变成可沉淀、可引用、可再创作的结构化笔记。
+> Capture & analyze WeChat articles and Xiaohongshu notes into structured, source-linked, reusable reading assets.
+
+（仓库名 `Wechat-Reader-Extension` 为历史沿用；插件自 v1.1.0 起更名 **Reader AI**，支持多平台。）
 
 ## 中文
 
-WeChat Reader AI 是一个本地 Chrome 插件，用来阅读微信公众号文章，并用 AI 生成结构化摘要、洞察和问答。
+### 定位
 
-它不是 Chrome Web Store 上架插件，目前主要用于个人阅读和学习沉淀。
+Reader AI 是一个本地 Chrome 插件，是个人内容管线的**输入端**：
+
+```text
+手机看到好内容 → 转发微信（发给自己） → 电脑点开链接 → Reader AI 分析
+       → 结构化笔记（带原文锚点） → 导出 → 阅读笔记库 → 再创作
+```
+
+它不是 Chrome Web Store 上架插件，用于个人阅读、学习沉淀和内容资产积累。
+
+### 支持平台
+
+| 平台 | 内容 | 说明 |
+|---|---|---|
+| 微信公众号 `mp.weixin.qq.com` | 图文文章 | 全功能 |
+| 小红书 `xiaohongshu.com` | 图文/视频笔记 | v1.1.0 起；需在浏览器中登录小红书；微信里的 `xhslink` 短链点开会自动跳转；视频笔记提取文字与封面 |
+
+架构为**站点适配器**模式（`content.js` 的 `SITE_ADAPTERS`），新平台 = 一个 adapter + 一行 manifest match。
 
 ### 它能做什么
 
-- 识别当前打开的微信公众号文章
-- 提取文章标题、作者、发布时间和正文
-- 生成 7 个阅读模块：
-  - Summary / 摘要
-  - Core Points / 核心要点
-  - Key Insights / 关键洞察，不做散点罗列
-  - Core Excerpts / 核心摘录，可点击定位原文段落
-  - Reader Value / 不同读者视角下的价值
-  - Core Conclusion / 核心结论
-  - Author Intent / 作者意图
-- 支持基于文章内容继续追问
-- 支持用 comment 优化当前输出：输入反馈后，AI 会重写七段阅读结果
-- 支持在正文里选中文本并保存为 Core Excerpt，同时附加 note
-- 支持在 Core Excerpts 里直接编辑 note、删除摘录
-- 支持记住 API Key，不用每次重新输入
-- 支持保存个人笔记
-- 支持导出结构化 Markdown 阅读笔记到 `reading-notes_YYYY-MM-DD-*.md`
-- 支持多个 AI Provider：Anthropic、OpenAI、DeepSeek、Moonshot、Zhipu、Custom
+**结构化分析**（7+1 模块，句句锚定原文段落 `[P#]`，点击跳回原文）：
+Summary / Core Points / Key Insights / Core Excerpts / Reader Value / Core Conclusion / Author Intent，以及由批注延伸生成的 **Action Ideas**（行动建议独立区块，不污染洞察区）。
+
+**读者画像（Reader Profile）**：在设置页描述"你是谁、为什么读"，所有分析写给这个具体的你——Reader Value 和 Action Ideas 不再是给抽象读者的顾问腔。
+
+**摘录与笔记**：正文划词 → ✦ Add Excerpt 保存并附 note；侧边栏内可编辑、删除；与 AI 摘录合并去重展示。
+
+**批注优化（Optimize with Comment）**：对输出提意见，AI 分类处理——修正类原地改、延伸类生成 Action Ideas、风格类调语气；反复出现的偏好自动沉淀为长期规则。
+
+**分析缓存**：结果按 URL 缓存，重开同一篇秒出、零 API 消耗；文章栏 ⟳ 强制重新分析。
+
+**追问**：基于文章内容继续 Chat。
+
+**导出**：结构化 Markdown（`reading-notes_YYYY-MM-DD-标题.md`），含图片索引（`[IMG#]` + URL）；配合本地同步脚本自动归集到阅读笔记库并刷新索引。
+
+**多 Provider**：Anthropic / OpenAI / DeepSeek / Moonshot / 智谱 / Custom，key 自动保存、随时切换。
 
 ### 本地安装
 
-1. 打开 Chrome
-2. 进入 `chrome://extensions`
-3. 打开 `Developer mode`
-4. 点击 `Load unpacked`
-5. 选择这个稳定路径：
+1. 打开 `chrome://extensions`，开启 `Developer mode`
+2. `Load unpacked` → 选择稳定软链路径：
 
 ```text
-~/workspace/wechat-reader-extension-stable
+~/work/wechat-reader-extension
 ```
 
-这个路径应该指向真实源码目录：
+该软链指向真实源码目录：
 
 ```text
-~/workspace/wechat-reader-extension/extension
+~/work/projects/wechat-reader-extension/extension
 ```
 
-如果 Chrome 显示 `ERR_FILE_NOT_FOUND`，通常是插件目录移动了。重新建立软链即可：
+如果 Chrome 显示 `ERR_FILE_NOT_FOUND`，通常是目录移动导致，重建软链即可：
 
 ```bash
-ln -sfn ~/workspace/wechat-reader-extension/extension ~/workspace/wechat-reader-extension-stable
+ln -sfn ~/work/projects/wechat-reader-extension/extension ~/work/wechat-reader-extension
 ```
 
-### 使用方式
+3. 打开一篇公众号文章或小红书笔记 → 点工具栏图标打开侧边栏
+4. ⚙ 设置里配置任一 Provider 的 API Key，并按需修改 Reader Profile
 
-1. 打开一篇微信公众号文章，URL 应该以 `https://mp.weixin.qq.com/` 开头
-2. 打开 WeChat Reader AI 侧边栏
-3. 先确认插件已经识别到文章
-4. 点击“开始分析”生成结构化阅读结果
-5. 如果输出不符合预期，在 `Optimize with Comment` 里写下你的反馈，让插件重写当前结果
-6. 继续追问、保存笔记或导出 Markdown
+详细排错见 [docs/SETUP.md](./docs/SETUP.md)。
+
+### 推荐使用流
+
+手机刷到好内容 → 分享到微信发给自己 → 电脑微信点开链接 → Chrome 打开侧边栏 →（已分析过则秒出缓存）分析 → 划词摘录 + 批注优化 → 导出入库。
+
+### Roadmap
+
+- **图片理解**（WR-020）：图片喂给多模态模型，`[IMG#]` 引用体系——小红书图重文轻的笔记真正"读得懂"
+- **链接收件箱**（WR-021）：批量粘贴链接，排队自动分析入库
+- **内容库对接**（WR-022）：图片资产随笔记入库，接入个人 content-os
+
+### 文档
+
+- [本地安装与故障排查](./docs/SETUP.md)
+- [产品迭代流程](./docs/OPTIMIZATION_WORKFLOW.md)（chat feedback → log → backlog → implement → verify 闭环）
+- [需求 Backlog](./docs/BACKLOG.md)
+- [真实交互日志](./docs/INTERACTION_LOG.md)
+- [从零重建插件的 Prompt](./docs/REBUILD_PROMPT.md)
 
 ### 项目结构
 
 ```text
 wechat-reader-extension/
-├── README.md              # 项目入口，中英双语说明
-├── extension/             # Chrome Load unpacked 选择的真实插件目录
+├── README.md              # 项目入口，中英双语
+├── extension/             # Chrome Load unpacked 指向的插件目录
 │   ├── manifest.json
-│   ├── background.js
-│   ├── content.js
-│   ├── sidepanel.*
-│   └── options.*
-└── docs/                  # 安装说明、backlog、交互日志、重建 prompt
+│   ├── background.js      # provider 调用与消息路由
+│   ├── content.js         # SITE_ADAPTERS 站点适配器 + 划词摘录
+│   ├── sidepanel.*        # 分析界面
+│   └── options.*          # Provider / Reader Profile / 笔记导出
+└── docs/                  # 安装、backlog、交互日志、重建 prompt
 ```
-
-### 文档
-
-- [本地安装与故障排查](./docs/SETUP.md)
-- [产品迭代流程](./docs/OPTIMIZATION_WORKFLOW.md)
-- [需求 Backlog](./docs/BACKLOG.md)
-- [真实交互日志](./docs/INTERACTION_LOG.md)
-- [从零重建插件的 Prompt](./docs/REBUILD_PROMPT.md)
-
-### 当前状态
-
-这个插件已经可以作为本地阅读助手使用。当前版本已经开始优化主体验：
-
-- 更清晰的“识别文章 → 开始分析”流程
-- 更具体的错误诊断和重试指引
-- 基于 comment 的多轮输出优化
-- 默认强调核心要点、聚合洞察和读者价值，而不是简单复述文章结构
-- 中文文章默认中文输出；英文文章默认中英双语输出
-- 更稳定的 Markdown 文件命名，方便沉淀到个人 reading-notes 文件夹
-- Core Excerpts 已支持选区摘录、备注、编辑和删除，并按段落顺序沉淀到 Markdown
 
 ---
 
 ## English
 
-WeChat Reader AI is a local Chrome extension for reading WeChat public-account articles with AI assistance.
+Reader AI is a local Chrome extension — the **capture end** of a personal content pipeline. It reads WeChat official-account articles and Xiaohongshu notes and produces a structured 7+1-section analysis (Summary, Core Points, Key Insights, source-linked Core Excerpts, Reader Value, Core Conclusion, Author Intent, plus comment-driven **Action Ideas**), with every claim anchored to original paragraphs (`[P#]`, click to jump back).
 
-It is not a Chrome Web Store extension. It is currently designed for personal reading, article analysis, and knowledge capture.
+Key ideas:
 
-### What It Does
+- **Reader Profile** — analyses are written for one specific reader described in settings, never a generic audience.
+- **Site-adapter architecture** — adding a platform is one adapter plus one manifest match; WeChat and Xiaohongshu ship today.
+- **Per-URL analysis cache** — reopening an analyzed page renders instantly at zero API cost; ⟳ forces re-analysis.
+- **Select-to-excerpt** with notes, inline edit/delete, deduped against AI excerpts.
+- **Comment loop** — feedback is classified (correction / style / extension); extensions land in a dedicated Action Ideas section instead of polluting insights; recurring preferences become standing rules.
+- **Markdown export** with an `[IMG#]` image index, auto-collected into a local reading-notes library.
+- Providers: Anthropic / OpenAI / DeepSeek / Moonshot / Zhipu / custom endpoint; keys auto-saved.
 
-- Detects the current WeChat article page
-- Extracts article title, author, publish time, and body text
-- Generates seven structured reading sections:
-  - Summary
-  - Core Points
-  - Key Insights
-  - Core Excerpts
-  - Reader Value
-  - Core Conclusion
-  - Author Intent
-- Supports follow-up Q&A based on the article
-- Supports comment-driven revision: write feedback and regenerate the seven-section analysis
-- Supports selecting text in the article body and saving it as a Core Excerpt with an optional note
-- Supports editing or deleting Core Excerpts directly in the side panel
-- Remembers API keys so you do not re-enter them every time
-- Saves personal reading notes
-- Exports structured Markdown notes with `reading-notes_YYYY-MM-DD-*.md`
-- Supports multiple AI providers: Anthropic, OpenAI, DeepSeek, Moonshot, Zhipu, and Custom
-
-### Local Installation
-
-1. Open Chrome
-2. Go to `chrome://extensions`
-3. Enable `Developer mode`
-4. Click `Load unpacked`
-5. Select the stable local path:
-
-```text
-~/workspace/wechat-reader-extension-stable
-```
-
-This stable path should point to the actual source directory:
-
-```text
-~/workspace/wechat-reader-extension/extension
-```
-
-If Chrome shows `ERR_FILE_NOT_FOUND`, the unpacked extension path probably moved. Recreate the symlink:
-
-```bash
-ln -sfn ~/workspace/wechat-reader-extension/extension ~/workspace/wechat-reader-extension-stable
-```
-
-### How to Use
-
-1. Open a WeChat article whose URL starts with `https://mp.weixin.qq.com/`
-2. Open the WeChat Reader AI side panel
-3. Confirm that the extension has detected the article
-4. Click “Start analysis” to generate the structured reading output
-5. If the output is not good enough, write feedback in `Optimize with Comment` and let the extension revise it
-6. Ask follow-up questions, save notes, or export Markdown
-
-### Repository Structure
-
-```text
-wechat-reader-extension/
-├── README.md              # Project entry point, bilingual
-├── extension/             # Actual Chrome unpacked extension directory
-│   ├── manifest.json
-│   ├── background.js
-│   ├── content.js
-│   ├── sidepanel.*
-│   └── options.*
-└── docs/                  # Setup, backlog, logs, rebuild prompt
-```
-
-### Documentation
-
-- [Local setup and troubleshooting](./docs/SETUP.md)
-- [Optimization workflow](./docs/OPTIMIZATION_WORKFLOW.md)
-- [Backlog](./docs/BACKLOG.md)
-- [Interaction log](./docs/INTERACTION_LOG.md)
-- [Rebuild prompt](./docs/REBUILD_PROMPT.md)
-
-### Current Status
-
-The extension is usable as a local reading assistant. The current version has started improving the core workflow:
-
-- clearer “detect article → start analysis” flow
-- better diagnostics and retry guidance
-- comment-driven multi-turn output revision
-- default emphasis on core points, synthesized insights, and reader value instead of article-outline recap
-- Chinese articles output in Chinese; English articles output bilingually in Chinese and English
-- cleaner Markdown file naming for the personal reading-notes workflow
-- Core Excerpts now support selection capture, notes, inline edit/delete, and structured Markdown export
+Not on the Chrome Web Store; built for personal reading and knowledge-asset accumulation. Installation & troubleshooting: [docs/SETUP.md](./docs/SETUP.md). Roadmap: multimodal image understanding (WR-020), link inbox (WR-021), content-library asset pipeline (WR-022).

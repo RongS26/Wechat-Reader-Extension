@@ -86,21 +86,16 @@ function activeAdapter() {
 }
 
 // --- Click-to-excerpt: floating button on text selection ---
+// The content element is resolved on EVERY selection (not once at boot):
+// SPA pages (XHS note modals, article re-renders) replace the body after load,
+// so a captured reference goes stale and the button silently stops appearing.
 (function setupExcerptSelection() {
-  let excerptSetupDone = false;
+  let excerptBtn = null;
+  let excerptTimer = null;
 
   function findContentEl() {
     try { return activeAdapter()?.contentEl() || null; } catch (_) { return null; }
   }
-
-  function bootWhenReady() {
-    if (excerptSetupDone) return;
-    const contentEl = findContentEl();
-    if (!contentEl) return;
-    excerptSetupDone = true;
-
-  let excerptBtn = null;
-  let excerptTimer = null;
 
   function removeBtn() {
     if (excerptBtn) { excerptBtn.remove(); excerptBtn = null; }
@@ -110,8 +105,9 @@ function activeAdapter() {
     const sel = window.getSelection();
     const text = sel?.toString().trim();
     if (!text || text.length < 8) return null;
+    const contentEl = findContentEl();
     const anchorNode = sel?.anchorNode || sel?.focusNode || null;
-    if (!anchorNode || !contentEl.contains(anchorNode)) return null;
+    if (!contentEl || !anchorNode || !contentEl.contains(anchorNode)) return null;
 
     const para = (anchorNode.parentElement || anchorNode.parentNode)?.closest?.('[data-wrai-paragraph]');
     const paragraphId = para?.dataset.wraiParagraph || '';
@@ -189,24 +185,6 @@ function activeAdapter() {
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') removeBtn();
   });
-  }
-
-  bootWhenReady();
-  if (!excerptSetupDone) {
-    const observer = new MutationObserver(() => {
-      if (excerptSetupDone) {
-        observer.disconnect();
-        return;
-      }
-      const contentEl = findContentEl();
-      if (contentEl) {
-        observer.disconnect();
-        bootWhenReady();
-      }
-    });
-    observer.observe(document.documentElement, { childList: true, subtree: true });
-    setTimeout(() => observer.disconnect(), 15000);
-  }
 })();
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
