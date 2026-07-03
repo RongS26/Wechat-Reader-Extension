@@ -29,7 +29,13 @@ const PROVIDERS = {
   zhipu: {
     name: '智谱 GLM',
     baseUrl: 'https://open.bigmodel.cn/api/paas',
-    defaultModel: 'glm-4-flash',
+    defaultModel: 'glm-4v-flash',
+    type: 'openai'
+  },
+  gemini: {
+    name: 'Google Gemini',
+    baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
+    defaultModel: 'gemini-2.5-flash-lite',
     type: 'openai'
   },
   custom: {
