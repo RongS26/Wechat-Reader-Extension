@@ -202,15 +202,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.type === 'getArticle') {
+    const SUPPORTED_URL = /^https:\/\/(mp\.weixin\.qq\.com|www\.xiaohongshu\.com)\//;
+    const UNSUPPORTED_MSG = 'Open a WeChat article (mp.weixin.qq.com) or a Xiaohongshu note (xiaohongshu.com) first.';
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (!tabs[0]) { sendResponse({ error: 'No active tab' }); return; }
-      if (!tabs[0].url?.startsWith('https://mp.weixin.qq.com/')) {
-        sendResponse({ error: 'Open a WeChat article (mp.weixin.qq.com) first.' });
+      if (!SUPPORTED_URL.test(tabs[0].url || '')) {
+        sendResponse({ error: UNSUPPORTED_MSG });
         return;
       }
       chrome.tabs.sendMessage(tabs[0].id, { type: 'extractArticle' }, (response) => {
         if (chrome.runtime.lastError) {
-          sendResponse({ error: 'Open a WeChat article (mp.weixin.qq.com) first.' });
+          sendResponse({ error: UNSUPPORTED_MSG });
         } else {
           sendResponse(response);
         }

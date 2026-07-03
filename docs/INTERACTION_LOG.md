@@ -452,3 +452,12 @@ chat feedback → interaction log → backlog → implementation → reload exte
 - Reader Profile: new options-page field (auto-saved, default profile pre-written from owner's context: LatAm fintech PM + AI-native workflow builder + personal-IP creator); injected into every analysis, comment regeneration, and Reader Value.
 - WR-018: analysis cached per URL in `chrome.storage.local` (`analysis:<url>`); reopening an analyzed article renders instantly from cache with a toast; new ⟳ button in article bar forces re-analysis; Apply Comment updates the cache.
 - Export/save paths (side panel + options bulk export) now include Action Ideas.
+
+### Implementation Added (2026-07-02, Phase 1: multi-platform capture)
+
+- content.js refactored to a `SITE_ADAPTERS` architecture (wechat / xhs); WeChat selectors preserved verbatim; adding a platform = one adapter + one manifest match.
+- XHS adapter: title/author/date/desc with layered selector fallbacks and og: meta last resort; carousel image collection with CDN-param dedupe; video-note detection; image/video-only notes proceed with title+media instead of erroring.
+- Excerpt selection now boots on any supported platform via the adapter's content element.
+- Analysis payload carries `platform / platformLabel / images[] / isVideo`; text-only analyses explicitly tell the model images exist but are not provided (anti-hallucination guard until WR-020).
+- Note export gains platform + `## Images` ([IMG#] URL list) for the future content library.
+- manifest 1.1.0: xiaohongshu.com content script match; platform-aware detection and error copy in side panel.

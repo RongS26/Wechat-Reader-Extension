@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "WeChat Reader AI",
-  "version": "1.0.0",
-  "description": "AI reading assistant — summary, insights, and Q&A for WeChat articles",
+  "version": "1.1.0",
+  "description": "AI reading assistant — summary, insights, and Q&A for WeChat articles and Xiaohongshu notes",
   "permissions": [
     "sidePanel",
     "storage",
@@ -23,7 +23,10 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://mp.weixin.qq.com/*"],
+      "matches": [
+        "https://mp.weixin.qq.com/*",
+        "https://www.xiaohongshu.com/*"
+      ],
       "js": ["content.js"],
       "run_at": "document_idle"
     }

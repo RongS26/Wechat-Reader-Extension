@@ -1,10 +1,96 @@
+// --- Site adapters: one extractor per supported platform ---
+// Adding a platform = adding an adapter object + a manifest content_scripts match.
+const SITE_ADAPTERS = {
+  wechat: {
+    id: 'wechat',
+    label: '微信公众号',
+    matches: () => location.hostname === 'mp.weixin.qq.com',
+    contentEl: () =>
+      document.querySelector('#js_content') ||
+      document.querySelector('.rich_media_content'),
+    title: () => (
+      document.querySelector('#activity-name') ||
+      document.querySelector('.rich_media_title')
+    )?.innerText?.trim() || document.title,
+    author: () => (
+      document.querySelector('#js_name') ||
+      document.querySelector('.profile_nickname')
+    )?.innerText?.trim() || '',
+    date: () => (
+      document.querySelector('#publish_time') ||
+      document.querySelector('.rich_media_meta_text')
+    )?.innerText?.trim() || '',
+    paragraphSelector: 'p, section, blockquote, li',
+    minContentLength: 80,
+    images(contentEl) {
+      if (!contentEl) return [];
+      return Array.from(contentEl.querySelectorAll('img'))
+        .map(img => img.dataset?.src || img.currentSrc || img.src || '')
+        .filter(src => /^https?:/.test(src));
+    },
+    isVideo: () => false
+  },
+  xhs: {
+    id: 'xhs',
+    label: '小红书',
+    matches: () => /(^|\.)xiaohongshu\.com$/.test(location.hostname),
+    // XHS is a SPA and its DOM shifts often — every selector has fallbacks,
+    // and meta tags are the last resort.
+    contentEl: () =>
+      document.querySelector('#detail-desc') ||
+      document.querySelector('.note-content .desc') ||
+      document.querySelector('.note-content') ||
+      document.querySelector('.desc'),
+    title: () =>
+      document.querySelector('#detail-title')?.innerText?.trim() ||
+      document.querySelector('.note-content .title')?.innerText?.trim() ||
+      document.querySelector('meta[property="og:title"]')?.content?.trim() ||
+      document.title,
+    author: () =>
+      document.querySelector('.author-wrapper .username')?.innerText?.trim() ||
+      document.querySelector('.author .name')?.innerText?.trim() ||
+      document.querySelector('.info .name')?.innerText?.trim() || '',
+    date: () =>
+      document.querySelector('.bottom-container .date')?.innerText?.trim() ||
+      document.querySelector('.date')?.innerText?.trim() || '',
+    paragraphSelector: 'p, .note-text > span, .desc > span',
+    minContentLength: 20,
+    images() {
+      const urls = [];
+      const push = src => {
+        if (!src || !/^https?:/.test(src)) return;
+        const clean = src.split('?')[0]; // CDN params differ across duplicated slides
+        if (!urls.some(u => u.split('?')[0] === clean)) urls.push(src);
+      };
+      document.querySelectorAll(
+        '.media-container img, .swiper-slide img, .img-container img, .carousel img'
+      ).forEach(img => push(img.currentSrc || img.src || img.dataset?.src));
+      if (!urls.length) {
+        document.querySelectorAll('meta[name="og:image"], meta[property="og:image"]')
+          .forEach(meta => push(meta.content));
+      }
+      return urls;
+    },
+    isVideo: () => Boolean(
+      document.querySelector('meta[name="og:video"], meta[property="og:video"]') ||
+      document.querySelector('.player-container video, xg-video-container video')
+    )
+  }
+};
+
+function activeAdapter() {
+  for (const adapter of Object.values(SITE_ADAPTERS)) {
+    try { if (adapter.matches()) return adapter; } catch (_) { /* try next */ }
+  }
+  return null;
+}
+
 // --- Click-to-excerpt: floating button on text selection ---
 (function setupExcerptSelection() {
   let excerptSetupDone = false;
 
   function findContentEl() {
-    return document.querySelector('#js_content') ||
-      document.querySelector('.rich_media_content');
+    try { return activeAdapter()?.contentEl() || null; } catch (_) { return null; }
   }
 
   function bootWhenReady() {
@@ -125,30 +211,19 @@
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'extractArticle') {
-    if (!location.hostname.includes('mp.weixin.qq.com')) {
-      sendResponse({ error: 'Open a WeChat article (mp.weixin.qq.com) first.' });
+    const adapter = activeAdapter();
+    if (!adapter) {
+      sendResponse({ error: 'Open a WeChat article (mp.weixin.qq.com) or a Xiaohongshu note (xiaohongshu.com) first.' });
       return true;
     }
 
-    const title = (
-      document.querySelector('#activity-name') ||
-      document.querySelector('.rich_media_title')
-    )?.innerText?.trim() || document.title;
+    const read = fn => { try { return fn ? fn.call(adapter) : ''; } catch (_) { return ''; } };
 
-    const author = (
-      document.querySelector('#js_name') ||
-      document.querySelector('.profile_nickname')
-    )?.innerText?.trim() || '';
-
-    const date = (
-      document.querySelector('#publish_time') ||
-      document.querySelector('.rich_media_meta_text')
-    )?.innerText?.trim() || '';
-
-    const contentEl = (
-      document.querySelector('#js_content') ||
-      document.querySelector('.rich_media_content')
-    );
+    const title = read(adapter.title) || document.title;
+    const author = read(adapter.author);
+    const date = read(adapter.date);
+    let contentEl = null;
+    try { contentEl = adapter.contentEl() || null; } catch (_) { contentEl = null; }
 
     let content = '';
     let paragraphs = [];
@@ -157,7 +232,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       clone.querySelectorAll('img, video, iframe, script, style').forEach(el => el.remove());
       content = clone.innerText.trim();
 
-      paragraphs = Array.from(contentEl.querySelectorAll('p, section, blockquote, li'))
+      paragraphs = Array.from(contentEl.querySelectorAll(adapter.paragraphSelector))
         .map((el, index) => {
           const text = el.innerText?.replace(/\s+/g, ' ').trim() || '';
           if (!text || text.length < 12) return null;
@@ -177,19 +252,37 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }
     }
 
+    let images = [];
+    try { images = adapter.images(contentEl) || []; } catch (_) { images = []; }
+    images = images.slice(0, 20).map((src, index) => ({ id: index + 1, src }));
+    const isVideo = Boolean(read(adapter.isVideo));
+
     const languageBase = `${title}\n${content}`;
-    const cjk = (languageBase.match(/[\u4e00-\u9fff]/g) || []).length;
+    const cjk = (languageBase.match(/[一-鿿]/g) || []).length;
     const latin = (languageBase.match(/[A-Za-z]/g) || []).length;
     const language = cjk >= latin ? 'zh' : 'en';
 
-    if (!content || content.length < 80) {
-      sendResponse({
-        error: 'Could not read article content. The page may still be loading or it may not be a WeChat article body.'
-      });
-      return true;
+    const minLength = adapter.minContentLength ?? 80;
+    if (!content || content.length < minLength) {
+      // Image- or video-first note (common on XHS): proceed with whatever text exists
+      const mediaOnlyOk = adapter.id === 'xhs' && (images.length || isVideo) && title;
+      if (!mediaOnlyOk) {
+        sendResponse({
+          error: 'Could not read the main content. The page may still be loading or it may not be a supported article/note body.'
+        });
+        return true;
+      }
+      content = content || title;
     }
 
-    sendResponse({ title, author, date, content, paragraphs, language, url: window.location.href });
+    sendResponse({
+      title, author, date, content, paragraphs, language,
+      url: window.location.href,
+      platform: adapter.id,
+      platformLabel: adapter.label,
+      images,
+      isVideo
+    });
   }
 
   if (message.type === 'scrollToParagraph') {

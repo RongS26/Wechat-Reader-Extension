@@ -324,11 +324,11 @@ function friendlyError(error) {
   if (/No API key/i.test(text)) {
     return `${text}\n\n处理方式：点右上角设置，保存 API Key，并确认当前 provider 显示 Using。`;
   }
-  if (/WeChat article|mp\.weixin|Open a WeChat/i.test(text)) {
-    return '当前页面不是可识别的微信公众号文章。\n\n处理方式：打开 mp.weixin.qq.com 文章正文页，再点击“识别当前文章”。';
+  if (/WeChat article|mp\.weixin|Open a WeChat|Xiaohongshu|xiaohongshu/i.test(text)) {
+    return '当前页面不是可识别的微信公众号文章或小红书笔记。\n\n处理方式：打开 mp.weixin.qq.com 文章正文页，或 xiaohongshu.com 笔记详情页，再点击“识别当前文章”。';
   }
   if (/Could not read|empty|content/i.test(text)) {
-    return '已经进入页面，但没有读到正文。\n\n可能原因：文章还没加载完、页面不是正文页、或微信改了 DOM。先刷新文章页，再点击重试。';
+    return '已经进入页面，但没有读到正文。\n\n可能原因：内容还没加载完、页面不是正文/笔记详情页、或平台改了 DOM。先刷新页面，再点击重试。';
   }
   if (/Failed to fetch|NetworkError|timeout/i.test(text)) {
     return 'AI 请求失败，像是网络或代理问题。\n\n处理方式：确认 API 服务可访问，或者切换 provider 后重试。';
@@ -423,7 +423,11 @@ async function detectArticle({ silent = false } = {}) {
     return true;
   }
 
-  $('detected-message').textContent = `已识别：${article.title || 'Untitled'}\n正文约 ${article.content.length.toLocaleString()} 字符`;
+  const detectedBits = [`正文约 ${article.content.length.toLocaleString()} 字符`];
+  if (article.images?.length) detectedBits.push(`${article.images.length} 张图`);
+  if (article.isVideo) detectedBits.push('视频笔记');
+  $('detected-message').textContent =
+    `已识别（${article.platformLabel || '文章'}）：${article.title || 'Untitled'}\n${detectedBits.join(' · ')}`;
   showState('detected');
   return true;
 }
@@ -444,11 +448,15 @@ async function analyzeArticle({ force = false } = {}) {
   $('loading-message').textContent = '正在生成结构化阅读结果…';
   showState('loading');
 
+  const mediaNotice = article.images?.length || article.isVideo
+    ? `\n\n[Note: this ${article.platformLabel || ''} content also contains ${article.images?.length || 0} image(s)${article.isVideo ? ' and video' : ''} that are NOT included in this text-only analysis. Do not guess or invent what the images/video show.]`
+    : '';
+
   const res = await msg('callAI', {
     system: buildAnalysisSystem(),
     messages: [{
       role: 'user',
-      content: `Title: ${article.title}\nAuthor: ${article.author}\nDate: ${article.date}\nURL: ${article.url}\n\n${articleText}`
+      content: `Title: ${article.title}\nAuthor: ${article.author}\nDate: ${article.date}\nURL: ${article.url}\n\n${articleText}${mediaNotice}`
     }]
   });
 
@@ -707,6 +715,8 @@ function buildCurrentNote() {
     title: article?.title || '',
     url: article?.url || '',
     author: article?.author || '',
+    platform: article?.platform || 'wechat',
+    images: (article?.images || []).map(img => img.src),
     language: articleLanguage,
     summary: $('summary-text').innerText,
     corePoints: $('structure-text').innerText,
@@ -739,7 +749,8 @@ function noteToMarkdown(n) {
     n.conclusion ? `\n## Core Conclusion\n${n.conclusion}` : '',
     n.authorIntent ? `\n## Author Intent\n${n.authorIntent}` : '',
     n.myNotes ? `\n## My Notes\n${n.myNotes}` : '',
-    n.comments?.length ? `\n## Applied Comments\n${n.comments.map(c => `- ${c}`).join('\n')}` : ''
+    n.comments?.length ? `\n## Applied Comments\n${n.comments.map(c => `- ${c}`).join('\n')}` : '',
+    n.images?.length ? `\n## Images\n${n.images.map((src, i) => `- [IMG${i + 1}] ${src}`).join('\n')}` : ''
   ].filter(Boolean).join('\n');
 }
 
