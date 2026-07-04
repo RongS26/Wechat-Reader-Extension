@@ -490,10 +490,25 @@ async function analyzeArticle({ force = false } = {}) {
   $('loading-message').textContent = '正在生成结构化阅读结果…';
   showState('loading');
 
-  const res = await msg('callAI', {
+  const sentImages = Array.isArray(userContent);
+  let res = await msg('callAI', {
     system: buildAnalysisSystem(imagesRule),
     messages: [{ role: 'user', content: userContent }]
   });
+
+  // 图片路径运行时失败（模型声称支持视觉但实际拒绝：max_tokens/配额/图太大等）
+  // → 自动降级为纯文本重试。识图能力是加分项，绝不能因它失败让整篇分析停摆；
+  //   纯文本阅读能力（无论用哪个模型）必须始终可用。
+  if (res?.error && sentImages) {
+    showExcerptToast('图片识别失败，已自动改用纯文本继续分析');
+    const textOnly = `${baseText}\n\n[Note: this ${article.platformLabel || ''} content also contains ${article.images?.length || 0} image(s)${article.isVideo ? ' and video' : ''} that could NOT be analyzed this time. Do not guess or invent what the images/video show.]`;
+    $('loading-message').textContent = '图片识别失败，正在按纯文本重新生成…';
+    showState('loading');
+    res = await msg('callAI', {
+      system: buildAnalysisSystem(''),
+      messages: [{ role: 'user', content: textOnly }]
+    });
+  }
 
   if (res?.error) {
     showError(res.error);
