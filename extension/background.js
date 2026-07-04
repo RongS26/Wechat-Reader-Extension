@@ -67,6 +67,14 @@ function toOpenAIContent(content) {
   );
 }
 
+// 各模型对 max_tokens 上限不同：glm-4v-flash 硬顶 1024，多数模型可 2048+。
+// 取值过高会被 400 拒绝（如智谱 "max_tokens参数非法：限制数值范围[1,1024]"）。
+function maxTokensFor(model) {
+  const m = String(model || '').toLowerCase();
+  if (/glm-4v-flash|glm-4-flash|glm-4v/.test(m)) return 1024;
+  return 2048;
+}
+
 async function callAnthropic({ baseUrl, apiKey, model, system, messages }) {
   const res = await fetch(`${baseUrl}/v1/messages`, {
     method: 'POST',
@@ -76,7 +84,7 @@ async function callAnthropic({ baseUrl, apiKey, model, system, messages }) {
       'anthropic-version': '2023-06-01'
     },
     body: JSON.stringify({
-      model, max_tokens: 2048, system,
+      model, max_tokens: maxTokensFor(model), system,
       messages: messages.map(m => ({ role: m.role, content: toAnthropicContent(m.content) }))
     })
   });
@@ -98,7 +106,7 @@ async function callOpenAICompat({ baseUrl, apiKey, model, system, messages }) {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`
     },
-    body: JSON.stringify({ model, max_tokens: 2048, messages: oaiMessages })
+    body: JSON.stringify({ model, max_tokens: maxTokensFor(model), messages: oaiMessages })
   });
   const data = await res.json();
   if (!res.ok) throw new Error(`AI API ${res.status}: ${data.error?.message || data.message || res.statusText}`);
