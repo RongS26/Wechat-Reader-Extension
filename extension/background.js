@@ -131,16 +131,41 @@ function supportsVision(providerId, model) {
   return false;
 }
 
-async function callAI({ system, messages }) {
+// 分工合作：图片识别步骤（mode:'vision'）自动选一个支持视觉的 provider，
+// 文字分析仍用当前主 provider。这样可以「DeepSeek 写文字 + GLM/Qwen 识图」——
+// 文字质量跟主模型走，识图只借视觉模型的眼睛。
+// 若主 provider 本身支持视觉，直接用它；否则按 glm→qwen→其它顺序挑已配 key 的。
+function pickVisionProvider(providers, activeProvider) {
+  const activeModel = providers[activeProvider]?.model || PROVIDERS[activeProvider]?.defaultModel;
+  if (providers[activeProvider]?.apiKey && supportsVision(activeProvider, activeModel)) {
+    return activeProvider;
+  }
+  for (const id of ['zhipu', 'qwen', 'anthropic', 'openai', 'gemini', 'moonshot', 'custom']) {
+    const cfg = providers[id];
+    if (!cfg?.apiKey) continue;
+    if (supportsVision(id, cfg.model || PROVIDERS[id]?.defaultModel)) return id;
+  }
+  return null;
+}
+
+async function callAI({ system, messages, mode }) {
   const { providers = {}, activeProvider = 'anthropic' } = await chrome.storage.sync.get(['providers', 'activeProvider']);
 
-  const providerConfig = providers[activeProvider];
-  if (!providerConfig?.apiKey) {
-    throw new Error(`No API key for "${PROVIDERS[activeProvider]?.name || activeProvider}". Configure in ⚙ Settings.`);
+  let providerId = activeProvider;
+  if (mode === 'vision') {
+    providerId = pickVisionProvider(providers, activeProvider);
+    if (!providerId) {
+      throw new Error('未配置支持图片的模型。请在 ⚙ Settings 给智谱 GLM 或通义 Qwen 填 API Key（可与文字模型并存）。');
+    }
   }
 
-  const def = PROVIDERS[activeProvider] || {};
-  const baseUrl = (activeProvider === 'custom' ? providerConfig.baseUrl : def.baseUrl) || '';
+  const providerConfig = providers[providerId];
+  if (!providerConfig?.apiKey) {
+    throw new Error(`No API key for "${PROVIDERS[providerId]?.name || providerId}". Configure in ⚙ Settings.`);
+  }
+
+  const def = PROVIDERS[providerId] || {};
+  const baseUrl = (providerId === 'custom' ? providerConfig.baseUrl : def.baseUrl) || '';
   const model = providerConfig.model || def.defaultModel;
   const type = def.type || 'openai';
 
@@ -278,9 +303,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.type === 'callAI') {
-    callAI({ system: message.system, messages: message.messages })
+    callAI({ system: message.system, messages: message.messages, mode: message.mode })
       .then(result => sendResponse({ result }))
       .catch(e => sendResponse({ error: e.message }));
+    return true;
+  }
+
+  if (message.type === 'getVisionInfo') {
+    (async () => {
+      const { providers = {}, activeProvider = 'anthropic' } = await chrome.storage.sync.get(['providers', 'activeProvider']);
+      const vid = pickVisionProvider(providers, activeProvider);
+      sendResponse({
+        available: Boolean(vid),
+        id: vid,
+        name: vid ? (PROVIDERS[vid]?.name || vid) : null,
+        sameAsText: vid === activeProvider
+      });
+    })().catch(err => sendResponse({ error: err.message }));
     return true;
   }
 

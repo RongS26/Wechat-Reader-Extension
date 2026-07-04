@@ -458,11 +458,13 @@ async function analyzeArticle({ force = false } = {}) {
   let imagesHandled = false;
 
   if (wantImageAnalysis()) {
-    // Guard against provider switches after the toggle was set (e.g. → DeepSeek)
-    const provider = await msg('getActiveProvider');
-    if (provider?.vision === false) {
-      showExcerptToast(`${provider.name} 不支持图片输入，本次按纯文本分析`);
+    // 识图用「支持视觉的 provider」，文字分析仍用主 provider（可 DeepSeek 写字 + GLM 识图）。
+    // 只有当一个支持视觉的 provider 都没配时，才退回纯文本。
+    const vision = await msg('getVisionInfo');
+    if (!vision?.available) {
+      showExcerptToast('未配置支持图片的模型（给 GLM/Qwen 填 key 即可），本次按纯文本分析');
     } else {
+      if (!vision.sameAsText) $('loading-message').textContent = `图片将由 ${vision.name} 识别…`;
     $('loading-message').textContent = '正在读取图片…';
     showState('loading');
     // Many images → smaller per-image resolution to keep token cost bounded
@@ -624,7 +626,7 @@ async function describeImagesInBatches(blocks) {
       content.push({ type: 'text', text: `[IMG${b.id}]` });
       content.push({ type: 'image', mediaType: b.mediaType, data: b.data });
     });
-    const res = await msg('callAI', { system: OCR_SYSTEM, messages: [{ role: 'user', content }] });
+    const res = await msg('callAI', { system: OCR_SYSTEM, messages: [{ role: 'user', content }], mode: 'vision' });
     if (res?.error || !res?.result) {
       chunk.forEach(b => failedIds.push(b.id));
       continue;
