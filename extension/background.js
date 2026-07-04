@@ -34,6 +34,12 @@ const PROVIDERS = {
     defaultModel: 'glm-4v-flash',
     type: 'openai'
   },
+  qwen: {
+    name: '通义千问 Qwen-VL',
+    baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    defaultModel: 'qwen-vl-plus',  // 视觉，单次可容更多图；DashScope 有免费额度
+    type: 'openai'
+  },
   gemini: {
     name: 'Google Gemini',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
@@ -72,6 +78,7 @@ function toOpenAIContent(content) {
 function maxTokensFor(model) {
   const m = String(model || '').toLowerCase();
   if (/glm-4v-flash|glm-4-flash|glm-4v/.test(m)) return 1024;
+  if (/qwen-vl|qwen2.*vl/.test(m)) return 1500;  // DashScope qwen-vl 输出上限 ~2000
   return 2048;
 }
 

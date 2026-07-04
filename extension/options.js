@@ -4,6 +4,7 @@ const PROVIDER_DEFS = {
   deepseek:  { name: 'DeepSeek',           placeholder: 'sk-…',     modelPlaceholder: 'deepseek-chat',            showUrl: false },
   moonshot:  { name: 'Moonshot (Kimi)',     placeholder: 'sk-…',     modelPlaceholder: 'moonshot-v1-8k',          showUrl: false },
   zhipu:     { name: '智谱 GLM',           placeholder: '…',        modelPlaceholder: 'glm-4v-flash（免费·支持图片）', showUrl: false },
+  qwen:      { name: '通义千问 Qwen-VL',   placeholder: 'sk-…',     modelPlaceholder: 'qwen-vl-plus（视觉·免费额度）', showUrl: false },
   gemini:    { name: 'Google Gemini',      placeholder: 'AIza…',    modelPlaceholder: 'gemini-2.5-flash-lite',   showUrl: false },
   custom:    { name: 'Custom',             placeholder: 'API Key',  modelPlaceholder: 'model name',              showUrl: true  }
 };

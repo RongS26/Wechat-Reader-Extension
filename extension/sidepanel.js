@@ -455,6 +455,7 @@ async function analyzeArticle({ force = false } = {}) {
   const baseText = `Title: ${article.title}\nAuthor: ${article.author}\nDate: ${article.date}\nURL: ${article.url}\n\n${articleText}`;
   let userContent = baseText;
   let imagesRule = '';
+  let imagesHandled = false;
 
   if (wantImageAnalysis()) {
     // Guard against provider switches after the toggle was set (e.g. → DeepSeek)
@@ -472,18 +473,27 @@ async function analyzeArticle({ force = false } = {}) {
     )).filter(Boolean);
 
     if (blocks.length) {
-      const providedIds = blocks.map(b => `IMG${b.id}`).join(', ');
-      imagesRule = `The content includes images numbered [IMG1], [IMG2], … provided after the text (available: ${providedIds}). Read them as part of the content. Cite [IMG#] the same way as [P#] when an insight, excerpt, or conclusion draws on an image. Do not describe images that were not provided.`;
-      userContent = [{ type: 'text', text: `${baseText}\n\nImages follow, each preceded by its id.` }];
-      blocks.forEach(block => {
-        userContent.push({ type: 'text', text: `[IMG${block.id}]` });
-        userContent.push({ type: 'image', mediaType: block.mediaType, data: block.data });
-      });
+      // 分批做 OCR+描述，把结果当文本喂给主分析：单次图片数不再超限，主分析变纯文本。
+      const { text: imgText, failedIds } = await describeImagesInBatches(blocks);
+      if (imgText) {
+        imagesHandled = true;
+        const okIds = blocks
+          .filter(b => !failedIds.includes(b.id))
+          .map(b => `IMG${b.id}`).join(', ');
+        imagesRule = `Image content is provided in the text below as OCR + short descriptions, each line labeled [IMG#] (available: ${okIds}). Treat it as part of the content and cite [IMG#] the same way as [P#] when an insight, excerpt, or conclusion draws on an image. Do not invent image content beyond what the descriptions state.`;
+        userContent = `${baseText}\n\n【图片内容 · OCR + 描述】\n${imgText}`;
+        if (failedIds.length) {
+          userContent += `\n\n[Note: ${failedIds.length} image(s) could not be recognized this time; do not guess their content.]`;
+          showExcerptToast(`${failedIds.length} 张图未能识别，其余照常分析`);
+        }
+      } else {
+        showExcerptToast('图片识别失败，已自动改用纯文本分析');
+      }
     }
     }
   }
 
-  if (typeof userContent === 'string' && (article.images?.length || article.isVideo)) {
+  if (!imagesHandled && typeof userContent === 'string' && (article.images?.length || article.isVideo)) {
     userContent += `\n\n[Note: this ${article.platformLabel || ''} content also contains ${article.images?.length || 0} image(s)${article.isVideo ? ' and video' : ''} that are NOT included in this text-only analysis. Do not guess or invent what the images/video show.]`;
   }
 
@@ -592,6 +602,37 @@ async function loadReaderProfile() {
 
 // --- Multimodal image pipeline (WR-020) ---
 const MAX_ANALYSIS_IMAGES = 12;
+
+// 每次视觉调用最多几张图。免费模型（如 glm-4v-flash）对单次输入图片数有硬上限，
+// 小红书动辄 8-12 张会直接被 "输入图片数量超过限制" 拒。分批调用绕过该限制。
+const VISION_BATCH = 4;
+
+const OCR_SYSTEM = 'You extract information from images for a reading assistant. For EACH image, output exactly one line starting with its id like "[IMG3]: " followed by (a) all readable text in the image (OCR, keep the original language), then (b) a brief factual description of any non-text visual content. Be concise and factual; never invent text or details that are not visible. Output only the [IMG#] lines, nothing else.';
+
+// 分批把图片做成 OCR+描述文本，再交给主分析当纯文本用。
+// 好处：单次图片数永远 ≤ VISION_BATCH（免费模型也不超限）；主分析变纯文本、
+// 不再受图片数/长度限制、可用任何模型；某一批失败只丢那几张，其余照常。
+async function describeImagesInBatches(blocks) {
+  const lines = [];
+  const failedIds = [];
+  for (let i = 0; i < blocks.length; i += VISION_BATCH) {
+    const chunk = blocks.slice(i, i + VISION_BATCH);
+    $('loading-message').textContent = `正在识别图片 ${i + 1}-${Math.min(i + VISION_BATCH, blocks.length)} / ${blocks.length}…`;
+    showState('loading');
+    const content = [{ type: 'text', text: `Describe these ${chunk.length} image(s). Each image is preceded by its id.` }];
+    chunk.forEach(b => {
+      content.push({ type: 'text', text: `[IMG${b.id}]` });
+      content.push({ type: 'image', mediaType: b.mediaType, data: b.data });
+    });
+    const res = await msg('callAI', { system: OCR_SYSTEM, messages: [{ role: 'user', content }] });
+    if (res?.error || !res?.result) {
+      chunk.forEach(b => failedIds.push(b.id));
+      continue;
+    }
+    lines.push(String(res.result).trim());
+  }
+  return { text: lines.join('\n'), failedIds };
+}
 
 async function fetchImageBlock(img, maxEdge = 1024) {
   try {
