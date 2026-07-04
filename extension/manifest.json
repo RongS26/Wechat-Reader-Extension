@@ -16,6 +16,7 @@
     "https://api.deepseek.com/*",
     "https://api.moonshot.cn/*",
     "https://open.bigmodel.cn/*",
+    "https://dashscope.aliyuncs.com/*",
     "*://*/*"
   ],
   "background": {
