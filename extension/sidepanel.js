@@ -476,14 +476,14 @@ async function analyzeArticle({ force = false } = {}) {
 
     if (blocks.length) {
       // 分批做 OCR+描述，把结果当文本喂给主分析：单次图片数不再超限，主分析变纯文本。
-      const { text: imgText, failedIds } = await describeImagesInBatches(blocks);
+      const { text: imgText, failedIds } = await describeImagesInBatches(blocks, article.title || '');
       if (imgText) {
         imagesHandled = true;
         const okIds = blocks
           .filter(b => !failedIds.includes(b.id))
           .map(b => `IMG${b.id}`).join(', ');
-        imagesRule = `Image content is provided in the text below as OCR + short descriptions, each line labeled [IMG#] (available: ${okIds}). Treat it as part of the content and cite [IMG#] the same way as [P#] when an insight, excerpt, or conclusion draws on an image. Do not invent image content beyond what the descriptions state.`;
-        userContent = `${baseText}\n\n【图片内容 · OCR + 描述】\n${imgText}`;
+        imagesRule = `After the article text below, you are given [IMG#] notes: OCR + factual descriptions produced by a vision model from the post's images (available: ${okIds}). These images are FIRST-CLASS content, on equal footing with the paragraphs — for image-heavy posts (e.g. 小红书) the images often carry the main substance while the caption is thin. Integrate the image information directly into every relevant section (SUMMARY, CORE POINTS, KEY INSIGHTS, READER VALUE, …), and cite [IMG#] exactly like [P#] wherever an image informs a point. Produce ONE unified analysis: do NOT add a separate "image description" section, and do NOT copy the raw notes back — synthesize them into your own words together with the text. Do not invent anything beyond what the notes and text state.`;
+        userContent = `${baseText}\n\n===== 图片取料（由视觉模型识别，供你综合，勿原样照抄）=====\n${imgText}`;
         if (failedIds.length) {
           userContent += `\n\n[Note: ${failedIds.length} image(s) could not be recognized this time; do not guess their content.]`;
           showExcerptToast(`${failedIds.length} 张图未能识别，其余照常分析`);
@@ -609,19 +609,21 @@ const MAX_ANALYSIS_IMAGES = 12;
 // 小红书动辄 8-12 张会直接被 "输入图片数量超过限制" 拒。分批调用绕过该限制。
 const VISION_BATCH = 4;
 
-const OCR_SYSTEM = 'You extract information from images for a reading assistant. For EACH image, output exactly one line starting with its id like "[IMG3]: " followed by (a) all readable text in the image (OCR, keep the original language), then (b) a brief factual description of any non-text visual content. Be concise and factual; never invent text or details that are not visible. Output only the [IMG#] lines, nothing else.';
+// 视觉模型只做「厚实的事实性取料」，不做分析——分析留给主模型（如 DeepSeek）。
+const OCR_SYSTEM = 'You are the vision component of a reading assistant. Your notes will be handed to another model that writes the final analysis, so capture everything substantive but stay strictly factual. For EACH image, output one block starting with its id like "[IMG3]:" then, concisely: (1) OCR — transcribe ALL readable text verbatim in its original language; (2) what the image actually shows (scene, objects, product, chart/table, screenshot, UI, step-in-a-tutorial); (3) the concrete information or point this image conveys. Never invent text or details that are not visible; do not analyze, rate, or editorialize. Output only the [IMG#] blocks, nothing else.';
 
-// 分批把图片做成 OCR+描述文本，再交给主分析当纯文本用。
+// 分批把图片做成「厚实的 OCR+描述」文本，再交给主分析当上下文用。
 // 好处：单次图片数永远 ≤ VISION_BATCH（免费模型也不超限）；主分析变纯文本、
 // 不再受图片数/长度限制、可用任何模型；某一批失败只丢那几张，其余照常。
-async function describeImagesInBatches(blocks) {
+async function describeImagesInBatches(blocks, contextHint = '') {
   const lines = [];
   const failedIds = [];
   for (let i = 0; i < blocks.length; i += VISION_BATCH) {
     const chunk = blocks.slice(i, i + VISION_BATCH);
     $('loading-message').textContent = `正在识别图片 ${i + 1}-${Math.min(i + VISION_BATCH, blocks.length)} / ${blocks.length}…`;
     showState('loading');
-    const content = [{ type: 'text', text: `Describe these ${chunk.length} image(s). Each image is preceded by its id.` }];
+    const hint = contextHint ? `Article title for context (helps you know what matters): ${contextHint}\n` : '';
+    const content = [{ type: 'text', text: `${hint}Extract notes from these ${chunk.length} image(s). Each image is preceded by its id.` }];
     chunk.forEach(b => {
       content.push({ type: 'text', text: `[IMG${b.id}]` });
       content.push({ type: 'image', mediaType: b.mediaType, data: b.data });
