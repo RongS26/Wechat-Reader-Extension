@@ -8,27 +8,29 @@ const PROVIDERS = {
     defaultModel: 'claude-haiku-4-5-20251001',
     type: 'anthropic'
   },
+  // baseUrl 含完整版本段（各家不同：OpenAI/DeepSeek/Moonshot 用 /v1，智谱用 /v4，
+  // Gemini 用 /v1beta/openai）。callOpenAICompat 只追加 /chat/completions。
   openai: {
     name: 'OpenAI',
-    baseUrl: 'https://api.openai.com',
+    baseUrl: 'https://api.openai.com/v1',
     defaultModel: 'gpt-4o-mini',
     type: 'openai'
   },
   deepseek: {
     name: 'DeepSeek',
-    baseUrl: 'https://api.deepseek.com',
+    baseUrl: 'https://api.deepseek.com/v1',
     defaultModel: 'deepseek-chat',
     type: 'openai'
   },
   moonshot: {
     name: 'Moonshot (Kimi)',
-    baseUrl: 'https://api.moonshot.cn',
+    baseUrl: 'https://api.moonshot.cn/v1',
     defaultModel: 'moonshot-v1-8k',
     type: 'openai'
   },
   zhipu: {
     name: '智谱 GLM',
-    baseUrl: 'https://open.bigmodel.cn/api/paas',
+    baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
     defaultModel: 'glm-4v-flash',
     type: 'openai'
   },
@@ -40,7 +42,7 @@ const PROVIDERS = {
   },
   custom: {
     name: 'Custom',
-    baseUrl: '',
+    baseUrl: '',  // 自定义 provider 请填含版本段的完整 base，如 https://host/v1
     defaultModel: '',
     type: 'openai'
   }
@@ -90,7 +92,7 @@ async function callOpenAICompat({ baseUrl, apiKey, model, system, messages }) {
     ? [{ role: 'system', content: system }, ...converted]
     : converted;
 
-  const res = await fetch(`${baseUrl}/v1/chat/completions`, {
+  const res = await fetch(`${baseUrl}/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
