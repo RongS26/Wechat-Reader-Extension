@@ -1,4 +1,4 @@
-# WeChat Reader AI · Backlog
+# Reader AI · Backlog
 
 > Workflow: chat feedback → interaction log → backlog → implementation → reload extension → verify on a real WeChat article.
 
@@ -18,7 +18,7 @@
 
 | ID | Priority | Title | Evidence From Chat | Proposed Change | Status |
 |---|---|---|---|---|---|
-| WR-001 | P0 | Stabilize local extension install path | “打开这个extension显示无法访问您的文件…ERR_FILE_NOT_FOUND” | Keep stable symlink `~/workspace/wechat-reader-extension-stable` and document it in setup instructions. | Ready |
+| WR-001 | P0 | Stabilize local extension install path | “打开这个extension显示无法访问您的文件…ERR_FILE_NOT_FOUND” | Keep stable symlink `~/workspace/reader-ai-extension` and document it in setup instructions. | Ready |
 | WR-002 | P1 | Add setup and troubleshooting guide | Repeated manual steps were needed to reload / re-enable the extension. | Add `SETUP.md`; update `REBUILD_PROMPT.md`; add troubleshooting section to options page later. | Ready |
 | WR-003 | P1 | Improve first-use and article-specific launch | User gave a WeChat article URL and expected direct plugin activation. | Add clearer unsupported-page state and explicit “detect current article → start analysis” flow. | Done |
 | WR-004 | P1 | Add diagnostics panel | Current errors are browser-level or generic extension errors. | Show supported page status, extraction status, API HTTP status, and recovery guidance. | Verify |

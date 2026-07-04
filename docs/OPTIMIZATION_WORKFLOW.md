@@ -1,4 +1,4 @@
-# WeChat Reader AI · Optimization Workflow
+# Reader AI · Optimization Workflow
 
 This project treats user chat feedback as product input, but does not automatically turn every comment into code.
 
@@ -55,8 +55,8 @@ If yes, record it before implementing.
 
 | Purpose | Path |
 |---|---|
-| Extension source | `~/workspace/wechat-reader-extension/extension` |
-| Stable unpacked extension path | `~/workspace/wechat-reader-extension-stable` |
+| Extension source | `~/workspace/reader-ai-extension/extension` |
+| Stable unpacked extension path | `~/workspace/reader-ai-extension` |
 | Reading notes home | `~/workspace/reading-notes` |
 
 ## Implementation Order

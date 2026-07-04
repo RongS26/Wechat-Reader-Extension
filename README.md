@@ -3,8 +3,6 @@
 > 图文内容的捕获与分析入口 —— 微信公众号 + 小红书，读进来的每一篇都变成可沉淀、可引用、可再创作的结构化笔记。
 > Capture & analyze WeChat articles and Xiaohongshu notes into structured, source-linked, reusable reading assets.
 
-（仓库名 `Wechat-Reader-Extension` 为历史沿用；插件自 v1.1.0 起更名 **Reader AI**，支持多平台。）
-
 ## 中文
 
 ### 定位
@@ -52,20 +50,22 @@ Summary / Core Points / Key Insights / Core Excerpts / Reader Value / Core Concl
 2. `Load unpacked` → 选择稳定软链路径：
 
 ```text
-~/work/wechat-reader-extension
+~/work/reader-ai-extension
 ```
 
 该软链指向真实源码目录：
 
 ```text
-~/work/projects/wechat-reader-extension/extension
+~/work/projects/reader-ai-extension/extension
 ```
 
 如果 Chrome 显示 `ERR_FILE_NOT_FOUND`，通常是目录移动导致，重建软链即可：
 
 ```bash
-ln -sfn ~/work/projects/wechat-reader-extension/extension ~/work/wechat-reader-extension
+ln -sfn ~/work/projects/reader-ai-extension/extension ~/work/reader-ai-extension
 ```
+
+如果 Chrome 之前已经加载过旧路径 `~/work/wechat-reader-extension`，可以保留旧软链作为兼容别名，但新的文档和仓库路径统一使用 `reader-ai-extension`。
 
 3. 打开一篇公众号文章或小红书笔记 → 点工具栏图标打开侧边栏
 4. ⚙ 设置里配置任一 Provider 的 API Key，并按需修改 Reader Profile
@@ -93,7 +93,7 @@ ln -sfn ~/work/projects/wechat-reader-extension/extension ~/work/wechat-reader-e
 ### 项目结构
 
 ```text
-wechat-reader-extension/
+reader-ai-extension/
 ├── README.md              # 项目入口，中英双语
 ├── extension/             # Chrome Load unpacked 指向的插件目录
 │   ├── manifest.json

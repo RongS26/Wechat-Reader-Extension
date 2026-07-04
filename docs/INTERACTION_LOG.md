@@ -1,4 +1,4 @@
-# WeChat Reader AI · Interaction Log
+# Reader AI · Interaction Log
 
 > Purpose: record real user chats and identify which parts should become product / interaction improvements for the extension.
 > Source: local Codex session with user, 2026-06-22.
@@ -23,8 +23,8 @@
 ### 1. Local Extension Path Is Fragile
 
 **Observed behavior**
-- The extension was originally loaded from `~/workspace/wechat-reader-extension-stable`.
-- Workspace cleanup moved it to `~/workspace/wechat-reader-extension`.
+- The extension was originally loaded from `~/workspace/reader-ai-extension`.
+- Workspace cleanup moved it to `~/workspace/reader-ai-extension`.
 - Chrome still remembered the old unpacked-extension path and showed `ERR_FILE_NOT_FOUND`.
 
 **Product implication**
@@ -35,8 +35,8 @@
 **Upgrade idea**
 - Add a `SETUP.md` / in-extension setup note explaining the stable install path.
 - Keep a stable symlink path:
-  - `~/workspace/wechat-reader-extension-stable`
-  - points to `~/workspace/wechat-reader-extension`
+  - `~/workspace/reader-ai-extension`
+  - points to `~/workspace/reader-ai-extension`
 - Add a visible “If extension fails after folder cleanup” troubleshooting section.
 
 **Priority**
@@ -193,8 +193,8 @@
 
 | Purpose | Path |
 |---|---|
-| Extension source | `~/workspace/wechat-reader-extension/extension` |
-| Stable Chrome unpacked-extension path | `~/workspace/wechat-reader-extension-stable` |
+| Extension source | `~/workspace/reader-ai-extension/extension` |
+| Stable Chrome unpacked-extension path | `~/workspace/reader-ai-extension` |
 | Personal reading notes | `~/workspace/reading-notes` |
 | Test article | `https://mp.weixin.qq.com/s/YZgBZW6589GIjsOvYUZ1fg` |
 
@@ -249,13 +249,13 @@ chat feedback → interaction log → backlog → implementation → reload exte
 
 | Time Context | User Message | What It Reveals |
 |---|---|---|
-| After building local extension workflow | “我在本地的wechat-reader-extension看下怎么链接到我的GitHub仓库里去，如果不能上传你可以用我的浏览器权限去在网页操作我的GitHub，主要是沉淀read_me和实际这个小插件怎么做” | User wants the local extension project connected to GitHub, with a clear README explaining what the extension does, how to install it, how to recover from path issues, and how future product iteration should work. |
+| After building local extension workflow | “我在本地的reader-ai-extension看下怎么链接到我的GitHub仓库里去，如果不能上传你可以用我的浏览器权限去在网页操作我的GitHub，主要是沉淀read_me和实际这个小插件怎么做” | User wants the local extension project connected to GitHub, with a clear README explaining what the extension does, how to install it, how to recover from path issues, and how future product iteration should work. |
 | After first GitHub upload | “上传了，但是你现在结构也太乱了，根本看不明白，能不能梳理清楚” | Repository needs a clearer information architecture: root should be the entry point, process/history documents should move into a docs folder, and README should make the structure self-evident. |
 | Same cleanup request | “然后read me x中英双语” | README should be bilingual so both Chinese-first personal workflow and English GitHub readers can understand the plugin. |
 
 ### Product / Repository Implication
 
-- The extension already has a GitHub remote: `https://github.com/<owner>/wechat-reader-extension.git`.
+- The extension already has a GitHub remote: `https://github.com/<owner>/reader-ai-extension.git`.
 - The repository initially lacked a `README.md`, making the project hard to understand from GitHub.
 - The first documentation pass left too many operational files in the root directory, making the repo visually noisy.
 - Setup instructions should document the stable local path and Chrome unpacked-extension workflow.
@@ -335,7 +335,7 @@ chat feedback → interaction log → backlog → implementation → reload exte
 ### Implementation Added
 
 - Moved Chrome extension files into `extension/`.
-- Updated stable local path to point `~/workspace/wechat-reader-extension-stable` at `.../wechat-reader-extension/extension`.
+- Updated stable local path to point `~/workspace/reader-ai-extension` at `.../reader-ai-extension/extension`.
 - Content script now extracts paragraph ids.
 - Analysis output now includes `Core Excerpts`.
 - `[P#]` references in the side panel are clickable and scroll the original WeChat article to the matching paragraph.
@@ -464,7 +464,7 @@ chat feedback → interaction log → backlog → implementation → reload exte
 
 ### Implementation Added (2026-07-03, rename + Phase 2 multimodal)
 
-- Renamed to Reader AI (manifest / side panel / options / README / SETUP); repo name kept for history.
+- Renamed to Reader AI (manifest / side panel / options / README / SETUP); repo and local project renamed to Reader AI.
 - Excerpt fix: content element resolved per-selection instead of once at boot — ✦ Add Excerpt now appears on XHS SPA note pages and survives DOM re-renders.
 - WR-020 multimodal: images fetched in the side panel, downscaled to ≤1024px JPEG, sent as base64 blocks (Anthropic & OpenAI-compat wire formats); capped at 6 images.
 - `[IMG#]` citation system parallel to `[P#]`: live images tagged `data-wrai-image` at extraction, amber pill buttons in analysis, click scrolls the page to the image with highlight.

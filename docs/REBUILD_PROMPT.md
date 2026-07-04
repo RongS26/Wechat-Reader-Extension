@@ -1,4 +1,4 @@
-# WeChat Reader AI — Rebuild Prompt
+# Reader AI — Rebuild Prompt
 
 把下面这段发给 Claude，可以在任何电脑上重新生成完整插件。
 
@@ -7,7 +7,7 @@
 ## Prompt（直接复制发给 Claude）
 
 ```
-请帮我创建一个 Chrome 浏览器扩展（Manifest V3），叫 "WeChat Reader AI"，实现以下功能：
+请帮我创建一个 Chrome 浏览器扩展（Manifest V3），叫 "Reader AI"，实现以下功能：
 
 ## 功能需求
 
@@ -55,22 +55,22 @@
 - extension/sidepanel.html + extension/sidepanel.css + extension/sidepanel.js（主侧边栏 UI 和逻辑）
 - extension/options.html + extension/options.js（多 provider 设置页 + 笔记导出）
 - README.md（中英双语项目入口：说明插件功能、安装、使用、文档索引、GitHub 发布流程）
-- docs/SETUP.md（说明本地稳定路径 `~/workspace/wechat-reader-extension-stable` 和 Chrome unpacked extension 安装方式）
+- docs/SETUP.md（说明本地稳定路径 `~/workspace/reader-ai-extension` 和 Chrome unpacked extension 安装方式）
 - docs/BACKLOG.md / docs/INTERACTION_LOG.md / docs/OPTIMIZATION_WORKFLOW.md / docs/REBUILD_PROMPT.md（记录真实使用反馈、产品 backlog、迭代流程和重建提示词）
 
 ## 本地安装与稳定路径
 
 Chrome unpacked extension 对路径敏感。请使用固定路径加载：
 
-`~/workspace/wechat-reader-extension-stable`
+`~/workspace/reader-ai-extension`
 
 该路径应指向真实源码目录：
 
-`~/workspace/wechat-reader-extension/extension`
+`~/workspace/reader-ai-extension/extension`
 
 如果路径移动导致 `ERR_FILE_NOT_FOUND`，用下面命令重建软链：
 
-`ln -sfn ~/workspace/wechat-reader-extension/extension ~/workspace/wechat-reader-extension-stable`
+`ln -sfn ~/workspace/reader-ai-extension/extension ~/workspace/reader-ai-extension`
 
 ## 数据存储结构
 chrome.storage.sync 存：

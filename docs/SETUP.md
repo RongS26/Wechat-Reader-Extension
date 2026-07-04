@@ -15,19 +15,25 @@ ERR_FILE_NOT_FOUND
 To avoid this, keep Chrome pointed at a stable path:
 
 ```text
-~/work/wechat-reader-extension
+~/work/reader-ai-extension
 ```
 
 That path should point to the real extension source directory:
 
 ```text
-~/work/projects/wechat-reader-extension/extension
+~/work/projects/reader-ai-extension/extension
 ```
 
 ### Recreate Stable Symlink
 
 ```bash
-ln -sfn ~/work/projects/wechat-reader-extension/extension ~/work/wechat-reader-extension
+ln -sfn ~/work/projects/reader-ai-extension/extension ~/work/reader-ai-extension
+```
+
+If Chrome was previously loaded from the old `~/work/wechat-reader-extension` path, keep that path as a compatibility alias:
+
+```bash
+ln -sfn ~/work/projects/reader-ai-extension/extension ~/work/wechat-reader-extension
 ```
 
 ### Load in Chrome
@@ -35,9 +41,9 @@ ln -sfn ~/work/projects/wechat-reader-extension/extension ~/work/wechat-reader-e
 1. Open `chrome://extensions`.
 2. Enable `Developer mode`.
 3. Click `Load unpacked`.
-4. Select `~/work/wechat-reader-extension`.
-5. Open a WeChat article.
-6. Open the extension side panel.
+4. Select `~/work/reader-ai-extension`.
+5. Open a WeChat article or Xiaohongshu note.
+6. Open the Reader AI side panel.
 
 ### Verify
 
@@ -68,19 +74,25 @@ ERR_FILE_NOT_FOUND
 为了避免这个问题，让 Chrome 始终指向一个稳定路径：
 
 ```text
-/Users/didi/work/wechat-reader-extension
+/Users/didi/work/reader-ai-extension
 ```
 
 这个稳定路径应该指向真实插件源码目录：
 
 ```text
-/Users/didi/work/projects/wechat-reader-extension/extension
+/Users/didi/work/projects/reader-ai-extension/extension
 ```
 
 ### 重新创建稳定软链
 
 ```bash
-ln -sfn /Users/didi/work/projects/wechat-reader-extension/extension /Users/didi/work/wechat-reader-extension
+ln -sfn /Users/didi/work/projects/reader-ai-extension/extension /Users/didi/work/reader-ai-extension
+```
+
+如果 Chrome 之前加载的是旧路径 `/Users/didi/work/wechat-reader-extension`，可以保留这个兼容软链：
+
+```bash
+ln -sfn /Users/didi/work/projects/reader-ai-extension/extension /Users/didi/work/wechat-reader-extension
 ```
 
 ### 在 Chrome 中加载
@@ -88,9 +100,9 @@ ln -sfn /Users/didi/work/projects/wechat-reader-extension/extension /Users/didi/
 1. 打开 `chrome://extensions`。
 2. 启用 `Developer mode`。
 3. 点击 `Load unpacked`。
-4. 选择 `/Users/didi/work/wechat-reader-extension`。
-5. 打开一篇微信公众号文章。
-6. 打开插件侧边栏。
+4. 选择 `/Users/didi/work/reader-ai-extension`。
+5. 打开一篇微信公众号文章或小红书笔记。
+6. 打开 Reader AI 侧边栏。
 
 ### 验证
 
