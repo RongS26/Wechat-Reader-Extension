@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="1220" viewBox="0 0 940 1220" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">
+<rect width="940" height="1220" fill="#f9fafb"/>
+<text x="56" y="46" font-size="24" font-weight="800" fill="#111827">Reader AI — 版本演进时间轴</text>
+<text x="56" y="70" font-size="13" fill="#6b7280">从公众号单篇分析 → 多站点多模态识图分工的内容管线输入端 · 2026-05 → 2026-07</text>
+<line x1="70" y1="122" x2="70" y2="1030" stroke="#d1d5db" stroke-width="2"/>
+<line x1="70" y1="122" x2="120" y2="122" stroke="#d1d5db" stroke-width="2"/>
+<circle cx="70" cy="122" r="8" fill="#ffffff" stroke="#6366f1" stroke-width="3"/>
+<circle cx="70" cy="122" r="3" fill="#6366f1"/>
+<line x1="70" y1="286" x2="120" y2="286" stroke="#d1d5db" stroke-width="2"/>
+<circle cx="70" cy="286" r="8" fill="#ffffff" stroke="#0ea5e9" stroke-width="3"/>
+<circle cx="70" cy="286" r="3" fill="#0ea5e9"/>
+<line x1="70" y1="472" x2="120" y2="472" stroke="#d1d5db" stroke-width="2"/>
+<circle cx="70" cy="472" r="8" fill="#ffffff" stroke="#14b8a6" stroke-width="3"/>
+<circle cx="70" cy="472" r="3" fill="#14b8a6"/>
+<line x1="70" y1="658" x2="120" y2="658" stroke="#d1d5db" stroke-width="2"/>
+<circle cx="70" cy="658" r="8" fill="#ffffff" stroke="#f59e0b" stroke-width="3"/>
+<circle cx="70" cy="658" r="3" fill="#f59e0b"/>
+<line x1="70" y1="844" x2="120" y2="844" stroke="#d1d5db" stroke-width="2"/>
+<circle cx="70" cy="844" r="8" fill="#ffffff" stroke="#ec4899" stroke-width="3"/>
+<circle cx="70" cy="844" r="3" fill="#ec4899"/>
+<line x1="70" y1="1030" x2="120" y2="1030" stroke="#d1d5db" stroke-width="2"/>
+<circle cx="70" cy="1030" r="8" fill="#ffffff" stroke="#ef4444" stroke-width="3"/>
+<circle cx="70" cy="1030" r="3" fill="#ef4444"/>
+<rect x="120" y="96" width="780" height="130" rx="12" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
+<rect x="120" y="96" width="5" height="130" rx="2.5" fill="#6366f1"/>
+<text x="140" y="120" font-size="12.5" font-weight="600" fill="#6366f1" font-family="ui-monospace,Menlo,monospace">2026-05-14</text>
+<text x="140" y="140" font-size="16" font-weight="700" fill="#111827">v0.1 · 初版</text>
+<text x="140" y="161" font-size="13.5" fill="#374151">WeChat Reader AI — 公众号文章分析</text>
+<circle cx="143" cy="182" r="2.5" fill="#6366f1"/>
+<text x="154" y="186" font-size="13" fill="#4b5563">多 Provider 支持 + 5 段结构化分析</text>
+<circle cx="143" cy="204" r="2.5" fill="#6366f1"/>
+<text x="154" y="208" font-size="13" fill="#4b5563">structure / conclusion / author intent</text>
+<rect x="120" y="260" width="780" height="152" rx="12" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
+<rect x="120" y="260" width="5" height="152" rx="2.5" fill="#0ea5e9"/>
+<text x="140" y="284" font-size="12.5" font-weight="600" fill="#0ea5e9" font-family="ui-monospace,Menlo,monospace">2026-06-24</text>
+<text x="140" y="304" font-size="16" font-weight="700" fill="#111827">v0.5 · 阅读工作流</text>
+<text x="140" y="325" font-size="13.5" fill="#374151">从「读完」到「沉淀」的闭环</text>
+<circle cx="143" cy="346" r="2.5" fill="#0ea5e9"/>
+<text x="154" y="350" font-size="13" fill="#4b5563">source-linked 摘录 + 划词 click-to-excerpt</text>
+<circle cx="143" cy="368" r="2.5" fill="#0ea5e9"/>
+<text x="154" y="372" font-size="13" fill="#4b5563">核心洞察优先、reader value 导向</text>
+<circle cx="143" cy="390" r="2.5" fill="#0ea5e9"/>
+<text x="154" y="394" font-size="13" fill="#4b5563">偏好 / 摘录持久化</text>
+<rect x="120" y="446" width="780" height="152" rx="12" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
+<rect x="120" y="446" width="5" height="152" rx="2.5" fill="#14b8a6"/>
+<text x="140" y="470" font-size="12.5" font-weight="600" fill="#14b8a6" font-family="ui-monospace,Menlo,monospace">2026-06-30 → 07-02</text>
+<text x="140" y="490" font-size="16" font-weight="700" fill="#111827">v0.8 · 质量 + 缓存</text>
+<text x="140" y="511" font-size="13.5" fill="#374151">分析可信度与零重复消耗 (WR-016/17/18)</text>
+<circle cx="143" cy="532" r="2.5" fill="#14b8a6"/>
+<text x="154" y="536" font-size="13" fill="#4b5563">状态竞态修复、评论区语义 + Reader Profile</text>
+<circle cx="143" cy="554" r="2.5" fill="#14b8a6"/>
+<text x="154" y="558" font-size="13" fill="#4b5563">per-URL 分析缓存：重开秒出、零 API 消耗</text>
+<circle cx="143" cy="576" r="2.5" fill="#14b8a6"/>
+<text x="154" y="580" font-size="13" fill="#4b5563">双语安装文档</text>
+<rect x="120" y="632" width="780" height="152" rx="12" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
+<rect x="120" y="632" width="5" height="152" rx="2.5" fill="#f59e0b"/>
+<text x="140" y="656" font-size="12.5" font-weight="600" fill="#f59e0b" font-family="ui-monospace,Menlo,monospace">2026-07-02</text>
+<text x="140" y="676" font-size="16" font-weight="700" fill="#111827">v1.1.0 · 站点适配器</text>
+<text x="140" y="697" font-size="13.5" fill="#374151">架构升级 + 小红书接入 (WR-019)</text>
+<circle cx="143" cy="718" r="2.5" fill="#f59e0b"/>
+<text x="154" y="722" font-size="13" fill="#4b5563">SITE_ADAPTERS 站点适配器模式</text>
+<circle cx="143" cy="740" r="2.5" fill="#f59e0b"/>
+<text x="154" y="744" font-size="13" fill="#4b5563">新平台 = 1 个 adapter + 1 行 manifest match</text>
+<circle cx="143" cy="762" r="2.5" fill="#f59e0b"/>
+<text x="154" y="766" font-size="13" fill="#4b5563">小红书图文/视频笔记捕获</text>
+<rect x="120" y="818" width="780" height="152" rx="12" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
+<rect x="120" y="818" width="5" height="152" rx="2.5" fill="#ec4899"/>
+<text x="140" y="842" font-size="12.5" font-weight="600" fill="#ec4899" font-family="ui-monospace,Menlo,monospace">2026-07-03</text>
+<text x="140" y="862" font-size="16" font-weight="700" fill="#111827">v1.2 · 多模态识图</text>
+<text x="140" y="883" font-size="13.5" fill="#374151">图片看得懂了 (WR-020)</text>
+<circle cx="143" cy="904" r="2.5" fill="#ec4899"/>
+<text x="154" y="908" font-size="13" fill="#4b5563">多模态图片分析 + [IMG#] 引用体系</text>
+<circle cx="143" cy="926" r="2.5" fill="#ec4899"/>
+<text x="154" y="930" font-size="13" fill="#4b5563">图片上限提到 12 + 自适应缩放</text>
+<circle cx="143" cy="948" r="2.5" fill="#ec4899"/>
+<text x="154" y="952" font-size="13" fill="#4b5563">新增 Gemini；智谱默认免费视觉 glm-4v-flash</text>
+<rect x="120" y="1004" width="780" height="152" rx="12" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
+<rect x="120" y="1004" width="5" height="152" rx="2.5" fill="#ef4444"/>
+<text x="140" y="1028" font-size="12.5" font-weight="600" fill="#ef4444" font-family="ui-monospace,Menlo,monospace">2026-07-04</text>
+<text x="140" y="1048" font-size="16" font-weight="700" fill="#111827">v1.3 · 识图健壮性 + 分工</text>
+<text x="140" y="1069" font-size="13.5" fill="#374151">视觉/文字分工，绝不因图停摆</text>
+<circle cx="143" cy="1090" r="2.5" fill="#ef4444"/>
+<text x="154" y="1094" font-size="13" fill="#4b5563">识图选 GLM/Qwen，文字走 DeepSeek 主模型（融合非并列）</text>
+<circle cx="143" cy="1112" r="2.5" fill="#ef4444"/>
+<text x="154" y="1116" font-size="13" fill="#4b5563">图片分批绕过免费模型单次上限</text>
+<circle cx="143" cy="1134" r="2.5" fill="#ef4444"/>
+<text x="154" y="1138" font-size="13" fill="#4b5563">max_tokens 自适应；识图失败自动降级纯文本</text>
+</svg>

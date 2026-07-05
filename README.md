@@ -42,7 +42,27 @@ Summary / Core Points / Key Insights / Core Excerpts / Reader Value / Core Concl
 
 **导出**：结构化 Markdown（`reading-notes_YYYY-MM-DD-标题.md`），含图片索引（`[IMG#]` + URL）；配合本地同步脚本自动归集到阅读笔记库并刷新索引。
 
-**多 Provider**：Anthropic / OpenAI / DeepSeek / Moonshot / 智谱 / Custom，key 自动保存、随时切换。
+**多 Provider**：Anthropic / OpenAI / DeepSeek / Moonshot / 智谱 GLM / 通义 Qwen-VL / Google Gemini / Custom，key 各自保存、随时切换主 provider。
+
+### API 分工合作
+
+一次「分析」不是一个模型包办，而是**文字**和**识图**两条链路分工：
+
+| 链路 | 用谁 | 说明 |
+|---|---|---|
+| **文字分析（主链路）** | 你选的**主 Provider**（如 DeepSeek `deepseek-chat`） | 决定分析质量与语气，是产出的主笔 |
+| **图片识别（`mode:'vision'`）** | 自动挑一个**支持视觉**的 Provider | 只借它的「眼睛」；主 provider 本身支持视觉就直接用它，否则按 `智谱GLM → Qwen-VL → Anthropic → OpenAI → Gemini → Moonshot → Custom` 挑第一个已配 key 的 |
+
+- **融合而非并列**：识图结果带标题上下文喂回主模型，由主模型统一成文，不是把图注贴在文字旁边。典型组合是「**DeepSeek 写文字 + GLM/Qwen 识图**」。
+- **接口差异内建**：各家 `baseUrl` 含正确版本段（OpenAI/DeepSeek/Moonshot=`/v1`、智谱=`/v4`、Gemini=`/v1beta/openai`），`callOpenAICompat` 只追加 `/chat/completions`；Anthropic 走独立 `/v1/messages` 协议。
+- **健壮性三板斧**：① 图片**分批识别**，绕开免费视觉模型的单次图片数上限（小红书 8–12 张不超限）；② `max_tokens` 按模型自适应（glm-4v-flash 硬顶 1024、Qwen-VL ~1500、其余 2048+），不再被 400 拒；③ 识图失败**自动降级**为纯文本分析——绝不因为图片让整篇停摆。
+
+### 适配与依赖（含 OCR）
+
+- **站点适配**：`content.js` 的 `SITE_ADAPTERS` 模式，当前公众号 + 小红书；新平台 = 1 个 adapter + 1 行 manifest match。
+- **视觉能力是可选依赖**：识图需要至少配置一个视觉 Provider 的 key——推荐**智谱 `glm-4v-flash`**（有免费额度）或 **Qwen-VL**（DashScope 免费额度）。纯 DeepSeek **无图片输入能力**，只配 DeepSeek 时图片会自动降级为纯文本。
+- **OCR 能力**：目前「读图」由**多模态视觉模型（VLM）**完成——它本身能识别图中文字、图表与排版语义，对小红书这类图重文轻的笔记已够用，相当于**内建了轻量 OCR**。尚未接入独立 OCR 引擎；若未来遇到**文字极密的长截图**（VLM 易漏字/截断），可加一层专用 OCR（本地 PaddleOCR / 云 OCR）先抽文字再喂主模型——权衡是多一个依赖与延迟，换长文字图的完整率。**当前判断**：非高频场景，VLM 够用，列入 backlog 而非现在做。
+- **host_permissions**：每个 Provider 的 API 域名 + 内容站点域名都在 `manifest.json` 显式声明；**新增 Provider 记得同步加域名**，否则请求会被 MV3 拦截。
 
 ### 本地安装
 
@@ -76,11 +96,29 @@ ln -sfn ~/work/projects/reader-ai-extension/extension ~/work/reader-ai-extension
 
 手机刷到好内容 → 分享到微信发给自己 → 电脑微信点开链接 → Chrome 打开侧边栏 →（已分析过则秒出缓存）分析 → 划词摘录 + 批注优化 → 导出入库。
 
+### 版本演进
+
+从公众号单篇分析，一步步长成「多站点 + 多模态识图分工」的内容管线输入端：
+
+![Reader AI 版本演进时间轴](./docs/version-timeline.svg)
+
+| 里程碑 | 日期 | 关键能力 |
+|---|---|---|
+| **v0.1 初版** | 2026-05-14 | 公众号文章分析；多 Provider + 5 段结构化 |
+| **v0.5 阅读工作流** | 2026-06-24 | source-linked 摘录、划词 excerpt、偏好持久化 |
+| **v0.8 质量 + 缓存** | 2026-06-30 → 07-02 | per-URL 缓存、评论区语义 + Reader Profile、状态竞态修复（WR-016/17/18） |
+| **v1.1.0 站点适配器** | 2026-07-02 | `SITE_ADAPTERS` 架构、小红书接入（WR-019） |
+| **v1.2 多模态识图** | 2026-07-03 | 图片分析 + `[IMG#]` 引用、新增 Gemini、glm-4v-flash（WR-020） |
+| **v1.3 识图健壮性 + 分工** | 2026-07-04 | 视觉/文字分工、图片分批、失败降级、`max_tokens` 自适应 |
+
+> `manifest.json` 当前版本 **1.1.0**；v1.2 / v1.3 为其后的功能里程碑（未再 bump manifest 版本号）。
+> 时间轴由 `scripts/gen_timeline.py` 生成（零依赖纯 SVG），改 `PHASES` 后重跑即可刷新。
+
 ### Roadmap
 
-- **图片理解**（WR-020）：图片喂给多模态模型，`[IMG#]` 引用体系——小红书图重文轻的笔记真正"读得懂"
 - **链接收件箱**（WR-021）：批量粘贴链接，排队自动分析入库
 - **内容库对接**（WR-022）：图片资产随笔记入库，接入个人 content-os
+- **独立 OCR 兜底**（候选）：文字极密长截图场景，VLM 之外加专用 OCR 预抽文字（详见「适配与依赖」）
 
 ### 文档
 
@@ -101,7 +139,9 @@ reader-ai-extension/
 │   ├── content.js         # SITE_ADAPTERS 站点适配器 + 划词摘录
 │   ├── sidepanel.*        # 分析界面
 │   └── options.*          # Provider / Reader Profile / 笔记导出
-└── docs/                  # 安装、backlog、交互日志、重建 prompt
+├── scripts/
+│   └── gen_timeline.py    # 生成版本演进时间轴 SVG（零依赖）
+└── docs/                  # 安装、backlog、交互日志、重建 prompt、版本时间轴
 ```
 
 ---
@@ -118,6 +158,7 @@ Key ideas:
 - **Select-to-excerpt** with notes, inline edit/delete, deduped against AI excerpts.
 - **Comment loop** — feedback is classified (correction / style / extension); extensions land in a dedicated Action Ideas section instead of polluting insights; recurring preferences become standing rules.
 - **Markdown export** with an `[IMG#]` image index, auto-collected into a local reading-notes library.
-- Providers: Anthropic / OpenAI / DeepSeek / Moonshot / Zhipu / custom endpoint; keys auto-saved.
+- Providers: Anthropic / OpenAI / DeepSeek / Moonshot / Zhipu GLM / Qwen-VL / Gemini / custom endpoint; keys auto-saved.
+- **Text/vision division of labor** — text analysis runs on your main provider (e.g. DeepSeek) while image reading auto-routes to a vision-capable one (GLM/Qwen fallback chain); results are *fused* by the main model, not juxtaposed. Images are batched, `max_tokens` is per-model adaptive, and vision failure silently degrades to text-only. Image reading uses multimodal VLMs (a built-in light OCR); a dedicated OCR pass is a backlog item for text-dense screenshots.
 
-Not on the Chrome Web Store; built for personal reading and knowledge-asset accumulation. Installation & troubleshooting: [docs/SETUP.md](./docs/SETUP.md). Roadmap: multimodal image understanding (WR-020), link inbox (WR-021), content-library asset pipeline (WR-022).
+Not on the Chrome Web Store; built for personal reading and knowledge-asset accumulation. Installation & troubleshooting: [docs/SETUP.md](./docs/SETUP.md). See the **版本演进 / version timeline** section for how it grew from a single-article analyzer to a multi-site multimodal pipeline. Roadmap: link inbox (WR-021), content-library asset pipeline (WR-022), optional dedicated-OCR fallback.
