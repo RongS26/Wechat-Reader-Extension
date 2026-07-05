@@ -96,23 +96,20 @@ ln -sfn ~/work/projects/reader-ai-extension/extension ~/work/reader-ai-extension
 
 手机刷到好内容 → 分享到微信发给自己 → 电脑微信点开链接 → Chrome 打开侧边栏 →（已分析过则秒出缓存）分析 → 划词摘录 + 批注优化 → 导出入库。
 
-### 版本演进
+### 版本迭代
 
-从公众号单篇分析，一步步长成「多站点 + 多模态识图分工」的内容管线输入端：
+从公众号单篇分析，一步步长成「多站点 + 多模态识图分工」的内容管线输入端。每个版本核心解决了什么：
 
-![Reader AI 版本演进时间轴](./docs/version-timeline.svg)
-
-| 里程碑 | 日期 | 关键能力 |
-|---|---|---|
-| **v0.1 初版** | 2026-05-14 | 公众号文章分析；多 Provider + 5 段结构化 |
-| **v0.5 阅读工作流** | 2026-06-24 | source-linked 摘录、划词 excerpt、偏好持久化 |
-| **v0.8 质量 + 缓存** | 2026-06-30 → 07-02 | per-URL 缓存、评论区语义 + Reader Profile、状态竞态修复（WR-016/17/18） |
-| **v1.1.0 站点适配器** | 2026-07-02 | `SITE_ADAPTERS` 架构、小红书接入（WR-019） |
-| **v1.2 多模态识图** | 2026-07-03 | 图片分析 + `[IMG#]` 引用、新增 Gemini、glm-4v-flash（WR-020） |
-| **v1.3 识图健壮性 + 分工** | 2026-07-04 | 视觉/文字分工、图片分批、失败降级、`max_tokens` 自适应 |
+| 版本 | 日期 | 做了啥 | 核心解决 / 升级 |
+|---|---|---|---|
+| **v0.1 初版** | 2026-05-14 | 公众号文章分析、多 Provider、5 段结构化 | **0→1**：把「读文章」变成可结构化分析的对象 |
+| **v0.5 阅读工作流** | 2026-06-24 | source-linked 摘录、划词 excerpt、偏好持久化 | 解决「**读完就忘**」——每条洞察锚定原文段落、可沉淀可引用 |
+| **v0.8 质量 + 缓存** | 2026-06-30 → 07-02 | per-URL 缓存、评论区语义 + Reader Profile、状态竞态修复 | 解决**重复消耗与状态错乱**；分析写给「具体的你」而非泛读者（WR-016/17/18） |
+| **v1.1.0 站点适配器** | 2026-07-02 | `SITE_ADAPTERS` 架构、小红书接入 | 从**单平台到可扩展多平台**：新站 = 1 个 adapter + 1 行 match（WR-019） |
+| **v1.2 多模态识图** | 2026-07-03 | 图片分析 + `[IMG#]` 引用、新增 Gemini、glm-4v-flash | 解决「**图重文轻读不懂**」——图片真正进入分析链路（WR-020） |
+| **v1.3 识图健壮性 + 分工** | 2026-07-04 | 视觉/文字分工、图片分批、失败降级、`max_tokens` 自适应 | 解决**识图稳定性**：绝不因图片让整篇停摆；文字质量归主模型、识图只借「眼睛」 |
 
 > `manifest.json` 当前版本 **1.1.0**；v1.2 / v1.3 为其后的功能里程碑（未再 bump manifest 版本号）。
-> 时间轴由 `scripts/gen_timeline.py` 生成（零依赖纯 SVG），改 `PHASES` 后重跑即可刷新。
 
 ### Roadmap
 
@@ -139,9 +136,7 @@ reader-ai-extension/
 │   ├── content.js         # SITE_ADAPTERS 站点适配器 + 划词摘录
 │   ├── sidepanel.*        # 分析界面
 │   └── options.*          # Provider / Reader Profile / 笔记导出
-├── scripts/
-│   └── gen_timeline.py    # 生成版本演进时间轴 SVG（零依赖）
-└── docs/                  # 安装、backlog、交互日志、重建 prompt、版本时间轴
+└── docs/                  # 安装、backlog、交互日志、重建 prompt
 ```
 
 ---
@@ -161,4 +156,4 @@ Key ideas:
 - Providers: Anthropic / OpenAI / DeepSeek / Moonshot / Zhipu GLM / Qwen-VL / Gemini / custom endpoint; keys auto-saved.
 - **Text/vision division of labor** — text analysis runs on your main provider (e.g. DeepSeek) while image reading auto-routes to a vision-capable one (GLM/Qwen fallback chain); results are *fused* by the main model, not juxtaposed. Images are batched, `max_tokens` is per-model adaptive, and vision failure silently degrades to text-only. Image reading uses multimodal VLMs (a built-in light OCR); a dedicated OCR pass is a backlog item for text-dense screenshots.
 
-Not on the Chrome Web Store; built for personal reading and knowledge-asset accumulation. Installation & troubleshooting: [docs/SETUP.md](./docs/SETUP.md). See the **版本演进 / version timeline** section for how it grew from a single-article analyzer to a multi-site multimodal pipeline. Roadmap: link inbox (WR-021), content-library asset pipeline (WR-022), optional dedicated-OCR fallback.
+Not on the Chrome Web Store; built for personal reading and knowledge-asset accumulation. Installation & troubleshooting: [docs/SETUP.md](./docs/SETUP.md). See **版本迭代 / version history** for what each release solved on the way from a single-article analyzer to a multi-site multimodal pipeline. Roadmap: link inbox (WR-021), content-library asset pipeline (WR-022), optional dedicated-OCR fallback.
