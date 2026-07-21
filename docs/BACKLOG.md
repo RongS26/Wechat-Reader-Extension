@@ -40,6 +40,9 @@
 | WR-020 | P1 | Multimodal image analysis (Phase 2) | “不能只做文字的，要做图文的，之前对微信文章其实也有这个需求” | Feed images (base64, capped/compressed) to multimodal providers; [IMG#] citation system alongside [P#]; per-platform default toggle (xhs on, wechat off). | Verify |
 | WR-021 | P2 | Link inbox + auto-analyze (Phase 3) | “真实流程一般是手机端看帖子然后发给自己的微信” | Paste multiple links into side panel; queue open→analyze→save; auto-analyze toggle on supported pages. | Proposed |
 | WR-022 | P2 | Content library asset pipeline (Phase 4) | “输出不一定直接变成小红书，还是有个内容库” | Notes with image assets land in content-os; ties to work-hub T066. | Proposed |
+| WR-023 | P1 | Add cangjie-style Distill Candidate section | “和我的Reader AI extension做下比较，我有哪些可以和它学习优化的” | Add an optional section after Action Ideas that extracts reusable methodology candidates: method name, source anchors `[P#]/[IMG#]`, trigger scenario, execution move, and boundary. Keep it lightweight; do not run a full book-level cangjie pipeline inside normal article analysis. | Proposed |
+| WR-024 | P1 | Export Skill Seed Markdown for cangjie handoff | Same comparison session; user wants Reader AI to learn from cangjie-skill | Add a second export format alongside reading notes: `skill-seed_YYYY-MM-DD-title.md`, containing source metadata, method candidates, evidence anchors, trigger scenarios, boundaries, and draft test prompts so a later agent can run full cangjie distillation. | Proposed |
+| WR-025 | P1 | Add triple verification gate for insights/action ideas | Same comparison session; cangjie-skill’s quality gates are relevant to Reader AI output quality | Update analysis/comment prompts to validate high-value claims against three checks: evidence-backed by source anchors, transferable to a new situation, and not generic common sense. Use this to reduce empty consultant-style insights. | Proposed |
 
 ---
 

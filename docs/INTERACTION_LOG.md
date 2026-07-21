@@ -475,3 +475,30 @@ chat feedback → interaction log → backlog → implementation → reload exte
 
 - User: “为什么默认选择了前X张图，在我有Y张图的情况下” → cap raised 6→12; >6 images auto-downscale to 768px to bound token cost; toggle label now honest: “全部 Y 张” or “前 12/Y 张（成本上限截断）”.
 - User: “用的是deepseek的API key为什么识别不了图片” → DeepSeek chat API has no image input. Added provider vision-capability detection (`supportsVision` in background): non-vision providers get a disabled toggle with an explicit reason + suggested switch; re-analyze path double-checks and degrades to text-only with a toast instead of failing silently. Aligns with the Model Transparency collaboration rule (2026-07-03).
+
+## 2026-07-21 · Reader AI 与 cangjie-skill 对比后的学习沉淀升级
+
+### User Chat Inputs
+
+| Time Context | User Message | What It Reveals |
+|---|---|---|
+| After installing `cangjie-skill` into the private agent skill source repo | “另外和我的Reader AI extension做下比较，我有哪些可以和它学习优化的” | User wants Reader AI to learn from cangjie-skill, not just compare conceptually. The improvement should connect reading capture with method/skill distillation. |
+| After proposed improvements | “OK可以的” | User confirmed the comparison should be recorded into the Reader AI product log and backlog. |
+
+### Comparison Summary
+
+- Reader AI is the **input end** of the personal content pipeline: capture WeChat/XHS pages, analyze text/images, preserve `[P#]` / `[IMG#]` source anchors, save excerpts, and export Markdown notes.
+- `cangjie-skill` is the **deep-processing end**: it turns long-form content into reusable Agent Skills through staged understanding, candidate extraction, triple verification, RIA++ construction, linking, and pressure tests.
+- They are complementary: Reader AI can capture and structure the source material; cangjie-style logic can decide which insights are strong enough to become reusable methods or future skills.
+
+### Product Implication
+
+- Reader AI should not try to run a full cangjie pipeline inside the extension by default; that would be too slow and token-heavy for ordinary reading.
+- It should add a lighter “skill seed” layer: identify reusable methodology candidates with evidence anchors, trigger scenarios, boundaries, and test prompts.
+- This makes a single article/note export useful both as a human reading note and as machine-readable input for future cangjie-skill distillation.
+
+### Backlog Impact
+
+- Added WR-023: Distill Candidate section.
+- Added WR-024: Skill Seed Markdown export.
+- Added WR-025: Triple verification quality gate for insights and action ideas.
